@@ -1,7 +1,7 @@
 import { charFrame } from '../world/tiles.js';
-import Progress from '../learning/progress.js';
-
-export const FONT = '"Pixelify Sans", sans-serif';
+import GameState from '../story/state.js';
+import { makeFxTextures } from '../fx/noir.js';
+import { FONT_TITLE } from '../ui/theme.js';
 
 export default class BootScene extends Phaser.Scene {
   constructor() {
@@ -10,14 +10,12 @@ export default class BootScene extends Phaser.Scene {
 
   preload() {
     const { width, height } = this.scale;
-    const label = this.add.text(width / 2, height / 2, 'Chargement…', {
-      fontFamily: FONT, fontSize: '28px', color: '#ffffff',
+    const label = this.add.text(width / 2, height / 2, 'Belleville', {
+      fontFamily: FONT_TITLE, fontSize: '30px', color: '#e9e3d5',
     }).setOrigin(0.5);
-    this.load.on('progress', (p) => label.setText(`Chargement… ${Math.round(p * 100)} %`));
+    this.load.on('progress', (p) => label.setAlpha(0.3 + p * 0.7));
 
     this.load.spritesheet('urban', 'assets/tiles/urban.png', { frameWidth: 16, frameHeight: 16 });
-    ['panel', 'button', 'button_pressed', 'button_right', 'button_wrong']
-      .forEach((k) => this.load.image(k, `assets/ui/${k}.png`));
     ['right', 'wrong', 'click', 'open']
       .forEach((k) => this.load.audio(k, [`assets/audio/${k}.ogg`, `assets/audio/${k}.mp3`]));
   }
@@ -29,12 +27,13 @@ export default class BootScene extends Phaser.Scene {
         this.anims.create({
           key: `c${c}-${dir}`,
           frames: [1, 0, 2, 0].map((s) => ({ key: 'urban', frame: charFrame(c, dir, s) })),
-          frameRate: 8,
+          frameRate: 7,
           repeat: -1,
         });
       });
     }
-    this.registry.set('progress', new Progress());
+    makeFxTextures(this);
+    this.registry.set('state', new GameState());
     this.scene.start('World');
     this.scene.launch('UI');
   }

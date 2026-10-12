@@ -33,6 +33,7 @@ export const T = {
   treeAutumnTrunk: 340,
   bush: 265,
   bench: 381,
+  barrier: [221, 222],
   bin: 279,
   mailbox: 305,
   planterRed: 276,

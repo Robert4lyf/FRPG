@@ -1,13 +1,14 @@
 import { buildTown, MAP_W, MAP_H, OY, SIGNS } from '../world/town.js';
 import { charFrame } from '../world/tiles.js';
-import { NPCS, PLAYER } from '../data/npcs.js';
-import { TOPICS } from '../data/topics.js';
-import { FONT } from './BootScene.js';
+import { CAST, CLUES, CHAPTER } from '../story/chapter1.js';
+import { NightLighting, gradeCamera } from '../fx/noir.js';
+import { FONT_TITLE } from '../ui/theme.js';
 
 const TILE = 16;
 const ZOOM = 3;
-const SPEED = 72;
-const REACH = 22; // px between feet to start a conversation
+const SPEED = 62; // a measured walk, not a jog
+const REACH = 22; // px between feet to interact
+const PLAYER_CHAR = 5;
 const LAYERS = ['ground', 'grass', 'water', 'building', 'facade', 'object', 'overhead'];
 const SOLID_LAYERS = ['water', 'building', 'object'];
 const OPPOSITE = { left: 'right', right: 'left', up: 'down', down: 'up' };
@@ -22,21 +23,28 @@ export default class WorldScene extends Phaser.Scene {
   }
 
   create() {
-    this.busy = false;
+    this.busy = true; // the UI releases this after the intro
     this.path = null;
-    this.pendingTalk = null;
-    this.progress = this.registry.get('progress');
+    this.pending = null;
+    this.state = this.registry.get('state');
 
     this.buildMap();
+    this.buildCrimeScene();
     this.buildCharacters();
+    this.buildClues();
     this.buildLabels();
 
     const cam = this.cameras.main;
     cam.setZoom(ZOOM).setBounds(0, 0, MAP_W * TILE, MAP_H * TILE).setRoundPixels(true);
-    cam.startFollow(this.player, true, 0.2, 0.2);
+    cam.startFollow(this.player, true, 0.15, 0.15);
+    gradeCamera(cam);
+
+    this.lighting = new NightLighting(this, MAP_W * TILE, MAP_H * TILE, this.town.lights);
+    this.lighting.follow(this.player, 26, 0.6);
+    this.people.forEach((s) => this.lighting.follow(s, 16, 0.45));
 
     this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT');
-    ['SPACE', 'E', 'ENTER'].forEach((k) => this.input.keyboard.on(`keydown-${k}`, () => this.tryTalk()));
+    ['SPACE', 'E', 'ENTER'].forEach((k) => this.input.keyboard.on(`keydown-${k}`, () => this.tryInteract()));
     this.input.on('pointerdown', (p) => this.onTap(p));
   }
 
@@ -63,62 +71,95 @@ export default class WorldScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, MAP_W * TILE, MAP_H * TILE);
   }
 
+  // Chalk outline where the body was laid out, and muddy prints from the park.
+  buildCrimeScene() {
+    const g = this.add.graphics().setDepth(2.5);
+    const ox = 22 * TILE + 3;
+    const oy = (14 + OY) * TILE + 3;
+    g.lineStyle(1, 0xf4f1ea, 0.75);
+    g.strokeCircle(ox + 4, oy + 5, 3.5);
+    const body = [[8, 3], [11, 3], [14, 0], [16, 1], [13, 4], [21, 3], [29, 3], [35, 1], [41, 2], [41, 4], [32, 5],
+      [41, 7], [41, 9], [35, 10], [29, 8], [21, 8], [14, 10], [12, 11], [11, 9], [13, 7], [8, 7]];
+    g.beginPath();
+    g.moveTo(ox + body[0][0], oy + body[0][1]);
+    body.slice(1).forEach(([x, y]) => g.lineTo(ox + x, oy + y));
+    g.closePath();
+    g.strokePath();
+
+    g.fillStyle(0x2a1f16, 0.75);
+    const from = { x: 31 * TILE, y: (13 + OY) * TILE + 6 };
+    const to = { x: 27 * TILE + 4, y: (13 + OY) * TILE + 9 };
+    for (let i = 0; i <= 10; i++) {
+      const t = i / 10;
+      const side = i % 2 ? -2 : 2;
+      g.fillEllipse(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t + side, 3, 2);
+    }
+  }
+
   buildCharacters() {
-    this.player = this.physics.add.sprite(centre(PLAYER.x), centre(PLAYER.y + OY), 'urban', charFrame(PLAYER.char, 'down', 0));
+    const start = CHAPTER.playerStart;
+    this.player = this.physics.add.sprite(centre(start.x), centre(start.y + OY), 'urban', charFrame(PLAYER_CHAR, 'up', 0));
     this.player.body.setSize(10, 6).setOffset(3, 10);
     this.player.setCollideWorldBounds(true);
-    this.player.char = PLAYER.char;
-    this.player.dir = 'down';
+    this.player.char = PLAYER_CHAR;
+    this.player.dir = 'up';
     SOLID_LAYERS.forEach((n) => this.physics.add.collider(this.player, this.layers[n]));
 
-    this.npcs = NPCS.map((n) => {
-      const s = this.physics.add.sprite(centre(n.x), centre(n.y + OY), 'urban', charFrame(n.char, 'down', 0));
+    this.people = Object.entries(CAST).map(([id, c]) => {
+      const s = this.physics.add.sprite(centre(c.x), centre(c.y + OY), 'urban', charFrame(c.char, 'down', 0));
       s.body.setSize(12, 8).setOffset(2, 8).setImmovable(true);
-      s.npc = n;
-      s.tx = n.x;
-      s.ty = n.y + OY;
+      Object.assign(s, { kind: 'person', id, info: c, tx: c.x, ty: c.y + OY });
       s.setDepth(10 + s.y / 1000);
       return s;
     });
-    this.physics.add.collider(this.player, this.npcs);
+    this.physics.add.collider(this.player, this.people);
 
-    // Townspeople glance around now and then.
+    // People shift their weight and glance around.
     this.time.addEvent({
-      delay: 2500, loop: true, callback: () => {
-        const s = Phaser.Utils.Array.GetRandom(this.npcs);
-        if (s !== this.talkingTo) s.setFrame(charFrame(s.npc.char, Phaser.Utils.Array.GetRandom(['down', 'down', 'left', 'right']), 0));
+      delay: 2800, loop: true, callback: () => {
+        const s = Phaser.Utils.Array.GetRandom(this.people);
+        if (s !== this.talkingTo) s.setFrame(charFrame(s.info.char, Phaser.Utils.Array.GetRandom(['down', 'down', 'left', 'right']), 0));
       },
     });
   }
 
-  // Text is drawn at 3x size and scaled down, so it stays crisp under the 3x camera zoom.
-  label(x, y, text, style = {}) {
-    return this.add.text(x, y, text, {
-      fontFamily: FONT, fontSize: '24px', color: '#ffffff', resolution: 1, ...style,
+  buildClues() {
+    this.clueSprites = Object.entries(CLUES).map(([id, c]) => {
+      const s = this.add.image(centre(c.x), centre(c.y + OY) + 2, 'glint').setDepth(2070);
+      Object.assign(s, { kind: 'clue', id, info: c, tx: c.x, ty: c.y + OY });
+      s.marker = this.add.image(s.x, s.y + 2, 'marker').setDepth(2.6).setVisible(false);
+      this.tweens.add({ targets: s, alpha: { from: 0.25, to: 1 }, scale: { from: 0.7, to: 1.1 }, yoyo: true, repeat: -1, duration: 700, delay: Math.random() * 600 });
+      return s;
+    });
+    this.refreshClues();
+  }
+
+  refreshClues() {
+    this.clueSprites.forEach((s) => {
+      const found = this.state.clues.includes(s.id);
+      s.setVisible(!found);
+      s.marker.setVisible(found);
+    });
+  }
+
+  // Text drawn at 3x and scaled down stays crisp under the 3x camera zoom.
+  label(x, y, str, style = {}) {
+    return this.add.text(x, y, str, {
+      fontFamily: FONT_TITLE, fontSize: '21px', color: '#e9e3d5', ...style,
     }).setScale(1 / ZOOM).setOrigin(0.5, 1).setDepth(2100);
   }
 
   buildLabels() {
     SIGNS.forEach((s) => this.label(s.x * TILE, (s.y + OY) * TILE + 1, s.text, {
-      fontSize: '21px', color: '#fff6d5', backgroundColor: '#3b2a1acc', padding: { x: 6, y: 2 },
-    }));
-    this.tags = this.npcs.map((s) => this.label(s.x, s.y - 8, '', {
-      fontSize: '20px', stroke: '#1b1b2b', strokeThickness: 5,
-    }));
-    this.refreshTags();
-
-    this.indicator = this.label(0, 0, '!', {
-      fontSize: '36px', color: '#ffd23f', stroke: '#1b1b2b', strokeThickness: 6,
+      fontSize: '19px', color: '#d9cfb8', backgroundColor: '#0b0b0ecc', padding: { x: 6, y: 2 },
+    }).setAlpha(0.8));
+    this.tags = this.people.map((s) => this.label(s.x, s.y - 8, s.info.name, {
+      fontSize: '18px', color: '#c7b38c', stroke: '#000000', strokeThickness: 5,
+    }).setAlpha(0.85));
+    this.indicator = this.label(0, 0, '', {
+      fontSize: '34px', color: '#e8c547', stroke: '#000000', strokeThickness: 6,
     }).setVisible(false);
-    this.tweens.add({ targets: this.indicator, scaleY: { from: 1 / ZOOM, to: 1.25 / ZOOM }, yoyo: true, repeat: -1, duration: 350 });
-  }
-
-  refreshTags() {
-    this.npcs.forEach((s, i) => {
-      const stats = this.progress.topicStats(s.npc.topic, TOPICS[s.npc.topic].words);
-      const stars = stats.seen ? ` ${'★'.repeat(stats.stars)}${'☆'.repeat(3 - stats.stars)}` : '';
-      this.tags[i].setText(`${s.npc.name}${stars}`);
-    });
+    this.tweens.add({ targets: this.indicator, alpha: { from: 1, to: 0.45 }, yoyo: true, repeat: -1, duration: 500 });
   }
 
   // ---------- input ----------
@@ -127,32 +168,34 @@ export default class WorldScene extends Phaser.Scene {
     return this.busy || this.time.now < (this.registry.get('lockUntil') || 0);
   }
 
+  interactables() {
+    return [...this.people, ...this.clueSprites.filter((s) => s.visible)];
+  }
+
   onTap(p) {
     if (this.inputLocked()) return;
-    const npc = this.npcs.find((s) => Math.abs(p.worldX - s.x) < 12 && Math.abs(p.worldY - s.y) < 14);
-    if (npc) {
-      if (this.distanceTo(npc) <= REACH) this.talk(npc);
-      else this.walkTo(npc.tx, npc.ty, npc);
+    const hit = this.interactables().find((s) => Math.abs(p.worldX - s.x) < 11 && Math.abs(p.worldY - s.y) < 13);
+    if (hit) {
+      if (this.distanceTo(hit) <= REACH) this.interact(hit);
+      else this.walkTo(hit.tx, hit.ty, hit);
       return;
     }
     this.walkTo(tileOf(p.worldX), tileOf(p.worldY));
   }
 
-  tryTalk() {
+  tryInteract() {
     if (this.inputLocked()) return;
-    const npc = this.nearestNpc();
-    if (npc) this.talk(npc);
+    const near = this.nearest();
+    if (near) this.interact(near);
   }
 
   // ---------- pathfinding (breadth-first search on the tile grid) ----------
 
   walkable(x, y) {
-    return !this.town.isSolid(x, y) && !this.npcs.some((s) => s.tx === x && s.ty === y);
+    return !this.town.isSolid(x, y) && !this.people.some((s) => s.tx === x && s.ty === y);
   }
 
-  // Walks to tile (gx, gy). If talkTo is set, stops next to that NPC and talks.
-  // If the goal can't be reached, walks to the closest reachable tile.
-  walkTo(gx, gy, talkTo = null) {
+  walkTo(gx, gy, target = null) {
     const sx = tileOf(this.player.body.center.x);
     const sy = tileOf(this.player.body.center.y);
     const key = (x, y) => y * MAP_W + x;
@@ -160,7 +203,10 @@ export default class WorldScene extends Phaser.Scene {
     const queue = [[sx, sy]];
     let best = [sx, sy];
     let bestD = Infinity;
-    const score = (x, y) => (talkTo ? Math.abs(x - gx) + Math.abs(y - gy) - 1 : Math.hypot(x - gx, y - gy));
+    // People: stop on a neighbouring tile. Clues: stand on them.
+    const score = (x, y) => (target?.kind === 'person'
+      ? Math.abs(x - gx) + Math.abs(y - gy) - 1
+      : Math.hypot(x - gx, y - gy));
     while (queue.length) {
       const [x, y] = queue.shift();
       const d = score(x, y);
@@ -177,73 +223,95 @@ export default class WorldScene extends Phaser.Scene {
     }
     const path = [];
     for (let c = best; c; c = prev.get(key(c[0], c[1]))) path.unshift(c);
-    path.shift(); // current tile
+    path.shift();
     this.path = path;
-    this.pendingTalk = talkTo;
+    this.pending = target;
     this.stuckFor = 0;
   }
 
-  // ---------- conversation ----------
+  // ---------- interaction ----------
 
   distanceTo(s) {
-    return Phaser.Math.Distance.Between(this.player.body.center.x, this.player.body.center.y, s.body.center.x, s.body.center.y);
+    const tx = s.body ? s.body.center.x : s.x;
+    const ty = s.body ? s.body.center.y : s.y;
+    return Phaser.Math.Distance.Between(this.player.body.center.x, this.player.body.center.y, tx, ty);
   }
 
-  nearestNpc() {
+  nearest() {
     let best = null;
     let bestD = REACH;
-    this.npcs.forEach((s) => {
+    this.interactables().forEach((s) => {
       const d = this.distanceTo(s);
       if (d <= bestD) { bestD = d; best = s; }
     });
     return best;
   }
 
-  async talk(s) {
+  async interact(s) {
     this.busy = true;
     this.path = null;
-    this.pendingTalk = null;
-    this.talkingTo = s;
+    this.pending = null;
     this.player.setVelocity(0);
     const dir = dirOf(s.x - this.player.x, s.y - this.player.y);
     this.player.dir = dir;
     this.idle();
-    s.setFrame(charFrame(s.npc.char, OPPOSITE[dir], 0));
     this.indicator.setVisible(false);
 
-    // Lift the player above the dialogue panel.
     const ui = this.scene.get('UI');
     const cam = this.cameras.main;
-    cam.setBounds(0, 0, MAP_W * TILE, MAP_H * TILE + ui.panelHeight() / ZOOM);
-    this.tweens.add({ targets: cam.followOffset, y: -ui.panelHeight() / (2 * ZOOM), duration: 250 });
+    const lift = ui.panelHeight() / (2 * ZOOM);
+    cam.setBounds(0, 0, MAP_W * TILE, MAP_H * TILE + lift * 2);
+    this.tweens.add({ targets: cam.followOffset, y: -lift, duration: 300 });
 
-    await ui.runConversation(s.npc);
+    if (s.kind === 'person') {
+      this.talkingTo = s;
+      s.setFrame(charFrame(s.info.char, OPPOSITE[dir], 0));
+      await ui.interrogate(s.id);
+      this.talkingTo = null;
+    } else {
+      await ui.examine(s.id);
+      this.refreshClues();
+    }
 
     this.tweens.add({
-      targets: cam.followOffset, y: 0, duration: 250,
+      targets: cam.followOffset, y: 0, duration: 300,
       onComplete: () => cam.setBounds(0, 0, MAP_W * TILE, MAP_H * TILE),
     });
-    this.refreshTags();
-    this.talkingTo = null;
     this.busy = false;
   }
 
-  // ---------- per-frame ----------
+  // ---------- per frame ----------
 
   idle() {
     this.player.anims.stop();
     this.player.setFrame(charFrame(this.player.char, this.player.dir, 0));
   }
 
+  // If the device struggles, drop the full-screen colour grading (the most expensive effect).
+  checkPerformance(dt) {
+    if (this.lowQuality) return;
+    this.perfTime = (this.perfTime || 0) + dt;
+    if (this.perfTime < 6000) return;
+    this.perfTime = 0;
+    if (this.game.loop.actualFps < 28) {
+      this.lowQuality = true;
+      this.cameras.main.postFX?.clear();
+    }
+  }
+
   update(_t, dt) {
     const p = this.player;
     p.setDepth(10 + p.y / 1000);
+    this.lighting.update(dt);
+    this.checkPerformance(dt);
     this.lastX = this.prevX;
     this.lastY = this.prevY;
     this.prevX = p.x;
     this.prevY = p.y;
+
     if (this.busy) {
       p.setVelocity(0);
+      if (p.anims.isPlaying) this.idle();
       return;
     }
 
@@ -251,45 +319,58 @@ export default class WorldScene extends Phaser.Scene {
     let vx = (k.RIGHT.isDown || k.D.isDown) - (k.LEFT.isDown || k.A.isDown);
     let vy = (k.DOWN.isDown || k.S.isDown) - (k.UP.isDown || k.W.isDown);
 
+    let speed = SPEED;
     if (vx || vy) {
       this.path = null;
-      this.pendingTalk = null;
+      this.pending = null;
     } else if (this.path) {
+      const bx = p.body.center.x;
+      const by = p.body.center.y;
+      // Drop waypoints we're already on.
+      while (this.path.length && Math.hypot(centre(this.path[0][0]) - bx, centre(this.path[0][1]) - by) < 0.75) this.path.shift();
       const next = this.path[0];
       if (next) {
-        const dx = centre(next[0]) - p.body.center.x;
-        const dy = centre(next[1]) - p.body.center.y;
-        if (Math.abs(dx) < 2 && Math.abs(dy) < 2) this.path.shift();
-        else { vx = dx; vy = dy; }
-        // Give up if something blocks the way.
+        vx = centre(next[0]) - bx;
+        vy = centre(next[1]) - by;
+        // Slow down on the final approach so a long (slow) frame lands exactly on the
+        // waypoint instead of overshooting it.
+        const dist = Math.hypot(vx, vy);
+        const maxStep = (SPEED * dt) / 1000;
+        if (dist < maxStep) speed = dist / (dt / 1000);
         const moved = Math.hypot(p.x - (this.lastX ?? p.x), p.y - (this.lastY ?? p.y));
-        this.stuckFor = moved < 0.2 && (vx || vy) ? this.stuckFor + dt : 0;
-        if (this.stuckFor > 400) this.path = null;
+        this.stuckFor = moved < 0.2 ? this.stuckFor + dt : 0;
+        if (this.stuckFor > 500) this.path = [];
       }
+      // Walk finished (or blocked): if we're close enough to the target, interact.
       if (this.path && !this.path.length) {
         this.path = null;
-        if (this.pendingTalk && this.distanceTo(this.pendingTalk) <= REACH + 8) {
-          const s = this.pendingTalk;
+        const target = this.pending;
+        this.pending = null;
+        vx = 0; vy = 0;
+        if (target && this.distanceTo(target) <= REACH + 14) {
           p.setVelocity(0);
-          this.talk(s);
+          this.interact(target);
           return;
         }
-        this.pendingTalk = null;
       }
     }
 
     const len = Math.hypot(vx, vy);
     if (len) {
-      p.setVelocity((vx / len) * SPEED, (vy / len) * SPEED);
+      p.setVelocity((vx / len) * speed, (vy / len) * speed);
       p.dir = dirOf(vx, vy);
       p.anims.play(`c${p.char}-${p.dir}`, true);
+      p.anims.timeScale = 0.85;
     } else {
       p.setVelocity(0);
       this.idle();
     }
 
-    const near = this.nearestNpc();
+    const near = this.nearest();
     this.indicator.setVisible(!!near);
-    if (near) this.indicator.setPosition(near.x, near.y - 15);
+    if (near) {
+      this.indicator.setText(near.kind === 'clue' ? '?' : '!');
+      this.indicator.setPosition(near.x, near.y - (near.kind === 'clue' ? 6 : 15));
+    }
   }
 }

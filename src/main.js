@@ -20,15 +20,19 @@ function gameSize() {
     : { width: SHORT, height: clamp((SHORT * h) / w) };
 }
 
-try { await document.fonts.load('24px "Pixelify Sans"'); } catch { /* fall back to system font */ }
+try {
+  await Promise.all([
+    '22px "Special Elite"', '22px "Courier Prime"', 'italic 22px "Courier Prime"', 'bold 22px "Courier Prime"',
+  ].map((f) => document.fonts.load(f)));
+} catch { /* fall back to system fonts */ }
 
 window.game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
   ...gameSize(),
   pixelArt: true,
-  backgroundColor: '#2b2d42',
-  physics: { default: 'arcade', arcade: { debug: false } },
+  backgroundColor: '#000000',
+  physics: { default: 'arcade', arcade: { debug: false, fixedStep: false } }, // real elapsed time: same walking speed at any frame rate
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   scene: [BootScene, WorldScene, UIScene],
 });

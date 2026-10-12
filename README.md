@@ -1,35 +1,63 @@
-# French Language RPG — Belleville
+# Belleville — un polar en français
 
-A pixel RPG for learning French. Walk around the town of Belleville and talk to the townspeople; each one teaches a topic through short quizzes. Built with HTML/JS and [Phaser 3](https://phaser.io), with no build step.
+A film-noir murder mystery played in French. You're a junior inspector sent from Lyon to a small town where the pharmacist has been found dead in the fountain. Everyone says it was an accident. Everyone is lying about something.
+
+The French is the game, not a lesson: you understand the dialogue to catch lies, connect clues and move the case forward. Aimed at players with school-level French (around GCSE). Built with HTML/JS and [Phaser 3](https://phaser.io), with no build step.
 
 ## Play
 
 Enable GitHub Pages (Settings → Pages → Deploy from branch → `main` / root), then play at
 https://robert4lyf.github.io/FRPG/
 
-- **Move:** arrow keys / WASD, or tap where you want to go (the player pathfinds around obstacles).
-- **Talk:** tap a person, or press Space/E next to them.
-- **Answer:** tap a button or press 1–3. Tap or Space to continue.
-- **Carnet (notebook):** shows every word, your progress, and plays pronunciation. Key: J.
+- **Move:** arrow keys / WASD, or tap where you want to go.
+- **Talk / examine:** tap a person or a glinting clue, or press Space next to it.
+- **Questioning:** pick a question, or **Présenter une preuve** to confront someone with a clue or another witness's statement.
+- **Help with French:** tap any gold word for its meaning and pronunciation. Tap **EN** to see the English for a line. Tap the objective box for English too.
+- **Carnet (notebook):** clues, witness statements, and every vocabulary word you've met. Key: C.
 
 ### Install on your phone (full-screen, no address bar)
 
 - **iPhone (Safari):** Share → Add to Home Screen.
 - **Android (Chrome):** ⋮ menu → Add to Home screen / Install app.
 
-Then open Belleville from the home-screen icon.
+## Story structure
 
-## How learning works
+Each chapter's grammar is what the investigation needs:
 
-- 10 townspeople, 10 topics, 80 words (`src/data/topics.js`).
-- New words are introduced before they're tested.
-- Three question types: French → English, English → French, and listening (uses the browser's built-in French voice when one is installed).
-- Spaced repetition (Leitner boxes): right answers move a word up a box, wrong answers send it back to box 0, and weaker words come up more often. Box 3+ counts as mastered. Progress is saved in the browser.
-- Stars above each person show how much of their topic you've mastered.
+| Chapter | Story | Grammar |
+|---|---|---|
+| 1. L'arrivée (done) | The scene, first statements, the first lie, the post-mortem | Present, passé composé |
+| 2. La nuit du crime | Rebuilding the night, breaking alibis | Imparfait vs passé composé |
+| 3. Les secrets | Letters, the victim's diary, a second death | Plus-que-parfait, pronouns, *qui/que/dont* |
+| 4. La vérité | Hypotheses and the accusation | Conditionnel, subjonctif |
+
+## Writing content
+
+Chapter scripts live in `src/story/`. Each line is:
+
+```js
+{ s: 'dubois', fr: 'Elle est [[tombée|fell]].', en: 'She fell.', record: 'statement_id', set: 'flag' }
+```
+
+- `[[word|gloss]]` marks a vocabulary word (gold, tappable, added to the Carnet).
+- `record` adds a witness statement to the notebook; `set` sets a story flag.
+- Questions can `require` flags, clues or statements. `evidence` maps a clue/statement id to the reaction when it's presented.
+- French dialogue should be reviewed by a native speaker before release.
+
+## Layout
+
+```
+src/story/chapter1.js    script: cast, clues, statements, dialogue, objectives
+src/story/state.js       case progress (saved in the browser)
+src/scenes/WorldScene.js town, characters, clues, tap-to-walk pathfinding
+src/scenes/UIScene.js    dialogue, interrogation, evidence, Carnet, title cards
+src/ui/theme.js          noir UI kit and tappable-word text renderer
+src/fx/noir.js           night lighting, colour grading, rain, grain, lightning, rain/thunder audio
+src/world/               town layout and tile reference
+src/learning/speech.js   French pronunciation (browser text-to-speech)
+```
 
 ## Run locally
-
-ES modules need a web server:
 
 ```
 python3 -m http.server
@@ -37,28 +65,6 @@ python3 -m http.server
 
 Then open http://localhost:8000.
 
-## Layout
-
-```
-index.html                 entry point (Phaser from CDN, pixel font)
-src/main.js                game config, sizes the game to the screen shape
-src/scenes/BootScene.js    asset loading, walk animations
-src/scenes/WorldScene.js   tilemap, player, NPCs, camera, tap-to-move pathfinding
-src/scenes/UIScene.js      dialogue, quiz buttons, HUD, Carnet
-src/world/town.js          town layout (built in code from tile indices)
-src/world/tiles.js         tile index reference for the urban tileset
-src/data/topics.js         vocabulary
-src/data/npcs.js           townspeople, positions, greetings
-src/learning/              quiz generator, spaced repetition, speech
-assets/                    sprites, UI, sounds, font (see assets/CREDITS.md)
-```
-
-## Adding content
-
-- **Words:** add `{ fr, en }` to a topic in `src/data/topics.js` (minimum 3 per topic).
-- **Person:** add an entry to `NPCS` in `src/data/npcs.js` with a walkable tile position, sprite (1–5), topic and greeting.
-- **Map:** edit `src/world/town.js`; tile numbers are listed in `src/world/tiles.js`.
-
 ## Credits
 
-Art, UI and sounds by [Kenney](https://kenney.nl) (CC0). Font: Pixelify Sans (OFL). Details in `assets/CREDITS.md`.
+Art and sounds by [Kenney](https://kenney.nl) (CC0). Fonts: Special Elite (Apache 2.0) and Courier Prime (OFL). Details in `assets/CREDITS.md`.

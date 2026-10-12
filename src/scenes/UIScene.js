@@ -1,19 +1,14 @@
-import { TOPICS } from '../data/topics.js';
-import { NPCS } from '../data/npcs.js';
-import { makeQuestion } from '../learning/quiz.js';
+import {
+  CAST, CLUES, STATEMENTS, DIALOGUE, INTRO, OUTRO, OBJECTIVES, CHAPTER,
+} from '../story/chapter1.js';
 import { speech } from '../learning/speech.js';
-import { MASTERED_BOX, MAX_BOX } from '../learning/progress.js';
-import { FONT } from './BootScene.js';
+import {
+  C, FONT_TITLE, drawPanel, text, makeButton, RichText, plainText, glosses,
+} from '../ui/theme.js';
+import { Weather, NoirAudio } from '../fx/noir.js';
 
-const INK = '#3b2a1a';
-const NAME = '#9c3d10';
-const SUB = '#6b5038';
-const GOOD = '#2e7d32';
-const BAD = '#b3261e';
-const PANEL_SLICE = [8, 8, 8, 8];
-const BUTTON_SLICE = [6, 6, 6, 8];
-const TOPIC_ORDER = NPCS.map((n) => n.topic);
 const SOUND_KEY = 'frpg.sound';
+const PAD = 30;
 
 export default class UIScene extends Phaser.Scene {
   constructor() {
@@ -24,76 +19,47 @@ export default class UIScene extends Phaser.Scene {
     this.W = this.scale.width;
     this.H = this.scale.height;
     this.portrait = this.H > this.W;
-    this.progress = this.registry.get('progress');
+    this.state = this.registry.get('state');
     this.world = this.scene.get('World');
     this.readyAt = 0;
     this.waiting = null;
-    this.choose = null;
+    this.showEn = false;
+    this.options = [];
 
     let soundOn = true;
     try { soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; } catch { /* ignore */ }
-    this.setSound(soundOn);
+
+    this.audio = this.sound.context ? new NoirAudio(this.sound) : null;
+    this.weather = new Weather(this, this.audio);
 
     this.buildHud();
     this.buildDialogue();
-    this.buildJournal();
+    this.buildTooltip();
+    this.setSound(soundOn);
 
     this.input.keyboard.on('keydown', (e) => this.onKey(e));
     this.input.on('pointerdown', () => {
-      if (this.dlg.visible || this.jr.visible) this.lock();
-      if (this.dlg.visible && this.waiting) this.continue();
+      if (this.modal()) this.lock();
+      this.hideTip();
+      if (this.waiting) this.continue();
     });
+    this.state.onChange(() => this.updateHud());
 
-    this.time.delayedCall(300, () => this.welcome());
+    this.time.delayedCall(150, () => this.begin());
   }
 
-  // ---------- helpers ----------
-
-  text(x, y, str, size, color, extra = {}) {
-    return this.add.text(x, y, str, { fontFamily: FONT, fontSize: `${size}px`, color, ...extra });
+  update() {
+    this.weather.update();
   }
 
-  // Kenney 9-slice textures are tiny, so draw them at half size and scale x2 for chunky pixels.
-  slice(x, y, key, w, h, s = PANEL_SLICE) {
-    return this.add.nineslice(x, y, key, undefined, w / 2, h / 2, ...s).setOrigin(0).setScale(2);
-  }
-
-  button(x, y, w, h, label, onClick, size = 24) {
-    const c = this.add.container(x, y);
-    const bgs = {};
-    ['button', 'button_pressed', 'button_right', 'button_wrong'].forEach((k) => {
-      bgs[k] = this.slice(0, 0, k, w, h, BUTTON_SLICE).setVisible(k === 'button');
-    });
-    const t = this.text(w / 2, h / 2 - 2, label, size, '#ffffff', { align: 'center', wordWrap: { width: w - 16 } })
-      .setOrigin(0.5).setShadow(0, 2, '#00000055', 0);
-    const zone = this.add.zone(0, 0, w, h).setOrigin(0).setInteractive({ useHandCursor: true });
-    c.add([...Object.values(bgs), t, zone]);
-
-    const b = {
-      c, t, enabled: true,
-      show(key) { Object.entries(bgs).forEach(([k, bg]) => bg.setVisible(k === key)); },
-      setLabel(s) { t.setText(s); return b; },
-    };
-    zone.on('pointerdown', () => {
-      this.lock();
-      if (!b.enabled) return;
-      b.show('button_pressed');
-      t.y = h / 2;
-      this.sound.play('click', { volume: 0.4 });
-    });
-    const release = (fire) => {
-      if (!b.enabled) return;
-      b.show('button');
-      t.y = h / 2 - 2;
-      if (fire) onClick();
-    };
-    zone.on('pointerup', () => release(true));
-    zone.on('pointerout', () => release(false));
-    return b;
-  }
+  // ---------- general ----------
 
   lock(ms = 250) {
     this.registry.set('lockUntil', this.time.now + ms);
+  }
+
+  modal() {
+    return this.dlg.visible || !!this.overlay || !!this.cardOpen;
   }
 
   setSound(on) {
@@ -101,283 +67,562 @@ export default class UIScene extends Phaser.Scene {
     this.sound.mute = !on;
     speech.setEnabled(on);
     try { localStorage.setItem(SOUND_KEY, on ? 'on' : 'off'); } catch { /* ignore */ }
-    this.soundBtn?.setLabel(on ? 'Son ✓' : 'Son ✗');
+    this.soundBtn?.setLabel(on ? 'Son : oui' : 'Son : non');
+  }
+
+  sfx(key, volume = 0.35) {
+    this.sound.play(key, { volume });
+  }
+
+  // Waits for a tap / Space. A tap while text is still typing just completes it.
+  waitTap(rich = null) {
+    this.readyAt = this.time.now + 200;
+    this.waitingRich = rich;
+    return new Promise((resolve) => { this.waiting = resolve; });
+  }
+
+  continue() {
+    if (!this.waiting || this.time.now < this.readyAt) return;
+    if (this.time.now - (this.wordTappedAt || 0) < 150) return; // tapping a word isn't "next"
+    if (this.waitingRich?.revealing) {
+      this.waitingRich.finish();
+      this.readyAt = this.time.now + 150;
+      return;
+    }
+    const done = this.waiting;
+    this.waiting = null;
+    this.waitingRich = null;
+    done();
   }
 
   // ---------- HUD ----------
 
   buildHud() {
-    const h = 52;
-    this.hudBg = this.slice(12, 12, 'panel', 200, h);
-    this.hudText = this.text(28, 12 + h / 2, '', 22, INK).setOrigin(0, 0.5);
-    this.journalBtn = this.button(this.W - 12 - 130, 12, 130, h, 'Carnet', () => this.openJournal(), 22);
-    this.soundBtn = this.button(this.W - 12 - 130 - 10 - 116, 12, 116, h, '', () => this.setSound(!this.soundOn), 22);
-    this.setSound(this.soundOn);
+    const { W } = this;
+    const btnW = this.portrait ? 112 : 128;
+    this.carnetBtn = makeButton(this, W - 12 - btnW, 12, btnW, 44, 'Carnet', () => this.openCarnet(), { size: 18, font: FONT_TITLE });
+    this.soundBtn = makeButton(this, W - 12 - btnW * 2 - 8, 12, btnW, 44, '', () => this.setSound(!this.soundOn), { size: 16 });
+    [this.carnetBtn, this.soundBtn].forEach((b) => b.c.setDepth(90));
+
+    this.objW = Math.min(W - btnW * 2 - 44, 470);
+    this.objG = this.add.graphics().setDepth(90);
+    this.objLabel = text(this, 26, 20, 'OBJECTIF', 13, C.name, { fontFamily: FONT_TITLE }).setDepth(91);
+    this.objText = text(this, 26, 38, '', 16, C.ink, { wordWrap: { width: this.objW - 30, useAdvancedWrap: true } }).setDepth(91);
+    this.objZone = this.add.zone(12, 12, this.objW, 60).setOrigin(0).setInteractive().setDepth(92);
+    this.objZone.on('pointerdown', (_p, _x, _y, e) => { e?.stopPropagation?.(); this.lock(); this.objEn = !this.objEn; this.updateHud(); });
     this.updateHud();
   }
 
   updateHud() {
-    let mastered = 0;
-    let total = 0;
-    TOPIC_ORDER.forEach((topic) => {
-      const s = this.progress.topicStats(topic, TOPICS[topic].words);
-      mastered += s.mastered;
-      total += s.total;
-    });
-    this.hudText.setText(`★ ${mastered} / ${total} mots`);
-    const w = Math.ceil((this.hudText.width + 34) / 2) * 2;
-    this.hudBg.setSize(w / 2, this.hudBg.height);
+    if (!this.objText) return;
+    const g = this.state;
+    const obj = OBJECTIVES.find((o) => !o.done(g)) || OBJECTIVES[OBJECTIVES.length - 1];
+    const count = obj.count ? ` (${obj.count(g)})` : '';
+    this.objText.setText((this.objEn ? obj.en : obj.fr) + count).setColor(this.objEn ? C.dim : C.ink);
+    const h = this.objText.height + 38;
+    this.objG.clear();
+    drawPanel(this.objG, 12, 12, this.objW, h, 0.82);
+    this.objZone.setSize(this.objW, h);
+    if (this.lastObjective !== obj && this.lastObjective) this.toast('NOUVEL OBJECTIF', obj.fr);
+    this.lastObjective = obj;
   }
 
-  // ---------- dialogue ----------
+  toast(title, body = '') {
+    this.toasts = this.toasts || [];
+    this.toasts.push([title, body]);
+    if (!this.toasting) this.nextToast();
+  }
+
+  nextToast() {
+    const next = this.toasts.shift();
+    if (!next) { this.toasting = false; return; }
+    this.toasting = true;
+    const [title, body] = next;
+    const w = Math.min(this.W - 40, 520);
+    const c = this.add.container(this.W / 2 - w / 2, this.portrait ? 118 : 84).setDepth(95).setAlpha(0);
+    const t1 = text(this, w / 2, 14, title, 14, C.gold, { fontFamily: FONT_TITLE }).setOrigin(0.5, 0);
+    const t2 = text(this, w / 2, 36, body, 17, C.ink, { align: 'center', wordWrap: { width: w - 30, useAdvancedWrap: true } }).setOrigin(0.5, 0);
+    const g = drawPanel(this.add.graphics(), 0, 0, w, t2.height + 50, 0.9);
+    c.add([g, t1, t2]);
+    this.tweens.chain({
+      targets: c,
+      tweens: [{ alpha: 1, duration: 200 }, { alpha: 1, duration: 2000 }, { alpha: 0, duration: 400 }],
+      onComplete: () => { c.destroy(); this.nextToast(); },
+    });
+  }
+
+  // ---------- dialogue panel ----------
+
+  linePanelH() {
+    return this.portrait ? 300 : 210;
+  }
 
   panelHeight() {
-    return this.portrait ? 400 : 240;
+    return this.linePanelH();
   }
 
   buildDialogue() {
-    const { W, H } = this;
-    const ph = this.panelHeight();
-    const top = H - ph - 12;
-    this.top = top;
+    const { W } = this;
     this.dlg = this.add.container(0, 0).setDepth(100).setVisible(false);
-    const panel = this.slice(12, top, 'panel', W - 24, ph);
-    this.nameText = this.text(36, top + 18, '', 22, NAME, { fontStyle: 'bold' });
-    this.mainText = this.text(36, top + 58, '', 26, INK, { wordWrap: { width: W - 84 } });
-    this.subText = this.text(36, top + 100, '', 19, SUB, { wordWrap: { width: W - 84 }, lineSpacing: 3 });
-    this.hint = this.text(W - 36, top + ph - 14, '▼', 22, INK).setOrigin(1, 1);
-    this.tweens.add({ targets: this.hint, alpha: 0.2, yoyo: true, repeat: -1, duration: 450 });
-    this.listenBtn = this.button(W - 36 - 150, top + 10, 150, 42, '🔊 Écouter', () => speech.speak(this.speakText), 18);
-    this.dlg.add([panel, this.nameText, this.mainText, this.subText, this.hint, this.listenBtn.c]);
-    this.choiceButtons = [];
-  }
-
-  showText(name, main, sub = '', speak = null) {
-    this.dlg.setVisible(true);
-    this.nameText.setText(name);
-    this.mainText.setText(main);
-    this.subText.setText(sub).setColor(SUB).setY(this.mainText.y + this.mainText.height + 6);
-    this.speakText = speak;
-    this.listenBtn.c.setVisible(!!speak && this.soundOn);
-    if (speak) speech.speak(speak);
-    this.readyAt = this.time.now + 250;
-  }
-
-  clearChoices() {
-    this.choiceButtons.forEach((b) => b.c.destroy());
-    this.choiceButtons = [];
-    this.choose = null;
-  }
-
-  continue() {
-    if (!this.waiting || this.time.now < this.readyAt) return;
-    const done = this.waiting;
-    this.waiting = null;
-    done();
-  }
-
-  waitContinue() {
-    // Sit the hint above any answer buttons so it never covers them.
-    const ph = this.panelHeight();
-    const buttonsTop = Math.min(...this.choiceButtons.map((b) => b.c.y));
-    this.hint.setY(this.choiceButtons.length ? buttonsTop - 6 : this.top + ph - 14);
-    this.hint.setVisible(true);
-    this.readyAt = this.time.now + 250;
-    return new Promise((resolve) => { this.waiting = resolve; });
-  }
-
-  async say(name, main, sub = '', speak = null) {
-    this.clearChoices();
-    this.showText(name, main, sub, speak);
-    await this.waitContinue();
-  }
-
-  ask(name, q) {
-    this.clearChoices();
-    this.showText(name, q.prompt, q.sub, q.speak);
-    this.hint.setVisible(false);
-    const { W, top } = this;
-    const ph = this.panelHeight();
-    const n = q.choices.length;
-
-    return new Promise((resolve) => {
-      this.choose = async (i) => {
-        if (i < 0 || i >= n || this.time.now < this.readyAt) return;
-        this.choose = null;
-        const ok = i === q.answer;
-        this.choiceButtons.forEach((b, j) => {
-          b.enabled = false;
-          if (j === q.answer) b.show('button_right');
-          else if (j === i) b.show('button_wrong');
-          else b.c.setAlpha(0.45);
-        });
-        this.sound.play(ok ? 'right' : 'wrong', { volume: 0.6 });
-        this.speakText = q.word.fr;
-        this.listenBtn.c.setVisible(this.soundOn);
-        speech.speak(q.word.fr);
-        this.subText
-          .setText(ok ? `✔ Très bien !  ${q.reveal}` : `✘ Pas tout à fait…  ${q.reveal}`)
-          .setColor(ok ? GOOD : BAD);
-        await this.waitContinue();
-        resolve(ok);
-      };
-
-      q.choices.forEach((label, i) => {
-        let x; let y; let w;
-        const h = 56;
-        if (this.portrait) {
-          w = W - 72; x = 36; y = top + ph - 20 - (n - i) * (h + 10) + 10;
-        } else {
-          w = (W - 72 - (n - 1) * 14) / n; x = 36 + i * (w + 14); y = top + ph - 20 - h;
-        }
-        this.choiceButtons.push(this.button(x, y, w, h, label, () => this.choose?.(i), 24));
-      });
-      this.choiceButtons.forEach((b) => this.dlg.add(b.c));
+    this.dlgG = this.add.graphics();
+    this.speaker = text(this, PAD, 0, '', 16, C.name, { fontFamily: FONT_TITLE });
+    this.body = new RichText(this, PAD, 0, W - PAD * 2, {
+      size: 21, onWord: (fr, en, obj) => this.wordTip(fr, en, obj),
     });
+    this.bodyEn = text(this, PAD, 0, '', 17, C.dim, { fontStyle: 'italic', wordWrap: { width: W - PAD * 2, useAdvancedWrap: true } });
+    this.hint = text(this, W - PAD, 0, '▼', 18, C.ink).setOrigin(1, 1);
+    this.tweens.add({ targets: this.hint, alpha: 0.15, yoyo: true, repeat: -1, duration: 500 });
+    this.enBtn = makeButton(this, 0, 0, 56, 34, 'EN', () => this.toggleEn(), { size: 15 });
+    this.ttsBtn = makeButton(this, 0, 0, 56, 34, '♪', () => speech.speak(this.currentFr), { size: 17 });
+    this.dlg.add([this.dlgG, this.speaker, this.body.container, this.bodyEn, this.hint, this.enBtn.c, this.ttsBtn.c]);
+  }
+
+  layoutPanel(h) {
+    const { W, H } = this;
+    const top = H - h - 10;
+    this.top = top;
+    this.dlgG.clear();
+    drawPanel(this.dlgG, 10, top, W - 20, h);
+    this.speaker.setPosition(PAD, top + 18);
+    this.enBtn.c.setPosition(W - PAD - 56, top + 12);
+    this.ttsBtn.c.setPosition(W - PAD - 56 - 64, top + 12);
+    this.hint.setPosition(W - PAD, top + h - 14);
+    return top;
   }
 
   openDialogue() {
-    this.dlg.setVisible(true).setAlpha(0).setY(30);
-    this.tweens.add({ targets: this.dlg, alpha: 1, y: 0, duration: 180 });
+    if (this.dlg.visible) return;
+    this.dlg.setVisible(true).setAlpha(0);
+    this.tweens.add({ targets: this.dlg, alpha: 1, duration: 200 });
+    this.carnetBtn.c.setVisible(false);
+    this.soundBtn.c.setVisible(false);
   }
 
   closeDialogue() {
-    this.clearChoices();
+    this.clearOptions();
+    this.body.clear();
     this.dlg.setVisible(false);
+    this.carnetBtn.c.setVisible(true);
+    this.soundBtn.c.setVisible(true);
+    this.hideTip();
     this.lock(300);
   }
 
-  async welcome() {
-    this.world.busy = true;
-    this.openDialogue();
-    await this.say(
-      'Belleville',
-      'Bienvenue à Belleville !',
-      'Talk to the townspeople to learn French. Use the arrow keys or tap where you want to go. '
-      + 'Tap a person, or press Space next to them, to talk. Answer with a tap or keys 1–3. '
-      + 'Your words are saved in the Carnet (notebook).',
-      'Bienvenue à Belleville !',
-    );
-    this.closeDialogue();
-    this.world.busy = false;
+  toggleEn() {
+    this.showEn = !this.showEn;
+    this.bodyEn.setVisible(this.showEn && !!this.currentEn);
+    this.options.forEach((o) => o.btn.setLabel(this.showEn ? o.en : o.label));
+    if (this.options.length) this.arrangeOptions();
   }
 
-  // Called by the world when the player talks to someone. Resolves when the chat ends.
-  async runConversation(npc) {
-    const topic = TOPICS[npc.topic];
-    this.openDialogue();
-    this.sound.play('open', { volume: 0.4 });
-    await this.say(npc.name, npc.greeting, npc.greetingEn, npc.greeting);
+  async showLine(l) {
+    this.clearOptions();
+    const top = this.layoutPanel(this.linePanelH());
+    const narr = l.s === 'narr';
+    const who = CAST[l.s];
+    this.speaker.setText(narr ? '' : l.s === 'you' ? 'VOUS' : `${who.name.toUpperCase()} · ${who.role}`);
+    this.body.y = top + (narr ? 30 : 50);
+    this.body.setText(l.fr, { italic: narr, color: narr ? '#cfc8b8' : C.ink });
+    this.currentFr = plainText(l.fr);
+    this.currentEn = l.en;
+    this.bodyEn.setText(l.en).setPosition(PAD, this.body.y + this.body.height + 2).setVisible(this.showEn);
+    this.ttsBtn.c.setVisible(this.soundOn && 'speechSynthesis' in window);
+    this.enBtn.c.setVisible(true);
 
-    const words = this.progress.pickSession(npc.topic, topic.words, 3);
-    let right = 0;
-    for (const word of words) {
-      const isNew = this.progress.isNew(npc.topic, word);
-      if (isNew) {
-        await this.say(npc.name, `Nouveau mot : ${word.fr}`, `New word: it means "${word.en}".`, word.fr);
+    glosses(l.fr).forEach((g) => this.state.addWord(g.fr, g.en));
+    if (l.set) this.state.set(l.set);
+    if (l.record && this.state.addStatement(l.record)) {
+      this.sfx('right', 0.3);
+      this.toast('TÉMOIGNAGE NOTÉ', `${CAST[STATEMENTS[l.record].who].name} : « ${STATEMENTS[l.record].fr} »`);
+    }
+
+    this.hint.setVisible(false);
+    this.body.reveal(narr ? 55 : 40, () => this.hint.setVisible(true));
+    await this.waitTap(this.body);
+    this.sfx('click', 0.12);
+  }
+
+  async playLines(lines) {
+    for (const l of lines) await this.showLine(l);
+  }
+
+  // ---------- option menus ----------
+
+  clearOptions() {
+    this.options.forEach((o) => o.btn.c.destroy());
+    this.options = [];
+    this.menuResolve = null;
+  }
+
+  arrangeOptions() {
+    const { W } = this;
+    const cols = this.portrait ? 1 : 2;
+    const gap = 10;
+    const colW = (W - PAD * 2 - gap * (cols - 1)) / cols;
+    const rows = [];
+    this.options.forEach((o, i) => {
+      const r = Math.floor(i / cols);
+      rows[r] = Math.max(rows[r] || 0, o.btn.h);
+    });
+    const total = rows.reduce((a, b) => a + b + gap, 0);
+    const top = this.layoutPanel(52 + total + 14);
+    let y = top + 50;
+    rows.forEach((rh, r) => {
+      for (let c = 0; c < cols; c++) {
+        const o = this.options[r * cols + c];
+        if (o) o.btn.c.setPosition(PAD + c * (colW + gap), y);
       }
-      const q = makeQuestion(word, topic.words, {
-        forceType: isNew ? 'fr2en' : null,
-        canListen: speech.available && this.soundOn,
+      y += rh + gap;
+    });
+    this.hint.setVisible(false);
+  }
+
+  menu(title, options) {
+    this.clearOptions();
+    this.body.clear();
+    this.bodyEn.setVisible(false);
+    this.currentEn = null;
+    this.speaker.setText(title);
+    this.ttsBtn.c.setVisible(false);
+    const cols = this.portrait ? 1 : 2;
+    const colW = (this.W - PAD * 2 - 10 * (cols - 1)) / cols;
+    return new Promise((resolve) => {
+      this.menuResolve = resolve;
+      options.forEach((o) => {
+        const btn = makeButton(this, 0, 0, colW, 46, this.showEn ? o.en : o.label, () => {
+          if (this.time.now < this.readyAt) return;
+          const r = this.menuResolve;
+          this.clearOptions();
+          r?.(o.value);
+        }, { size: 18, align: 'left' });
+        btn.setDim(!!o.dim);
+        this.dlg.add(btn.c);
+        this.options.push({ ...o, btn });
       });
-      const ok = await this.ask(npc.name, q);
-      this.progress.record(npc.topic, word, ok);
-      if (ok) right += 1;
-      this.updateHud();
-    }
-
-    const stats = this.progress.topicStats(npc.topic, topic.words);
-    let end;
-    if (right === words.length) end = ['Parfait ! À bientôt !', `Perfect! ${right}/${words.length}. See you soon!`];
-    else if (right >= 2) end = ['Bien joué ! À bientôt !', `Well done! ${right}/${words.length}. See you soon!`];
-    else end = ['Courage ! On réessaie bientôt ?', `Keep going! ${right}/${words.length}. Come back to practise.`];
-    end[1] += `  (${topic.title}: ${stats.mastered}/${stats.total} mastered)`;
-    await this.say(npc.name, end[0], end[1], end[0]);
-    this.closeDialogue();
-  }
-
-  // ---------- journal (Carnet) ----------
-
-  buildJournal() {
-    const { W, H } = this;
-    this.jr = this.add.container(0, 0).setDepth(200).setVisible(false);
-    const dim = this.add.rectangle(0, 0, W, H, 0x000000, 0.55).setOrigin(0).setInteractive();
-    const panel = this.slice(16, 16, 'panel', W - 32, H - 32);
-    const title = this.text(40, 34, 'Carnet', 30, NAME, { fontStyle: 'bold' });
-    const close = this.button(W - 40 - 120, 28, 120, 48, 'Fermer', () => this.closeJournal(), 22);
-    const prev = this.button(40, 92, 60, 56, '◀', () => this.showTopic(this.topicIdx - 1), 26);
-    const next = this.button(W - 40 - 60, 92, 60, 56, '▶', () => this.showTopic(this.topicIdx + 1), 26);
-    this.jrTitle = this.text(W / 2, 96, '', 26, INK, { fontStyle: 'bold' }).setOrigin(0.5, 0);
-    this.jrSub = this.text(W / 2, 128, '', 18, SUB, { align: 'center', wordWrap: { width: W - 220 } }).setOrigin(0.5, 0);
-    this.jr.add([dim, panel, title, close.c, prev.c, next.c, this.jrTitle, this.jrSub]);
-
-    const top = 176;
-    const rowH = Math.min(this.portrait ? 76 : 50, Math.floor((H - 32 - 20 - top) / 8));
-    this.jrRows = [];
-    for (let i = 0; i < 8; i++) {
-      const y = top + i * rowH;
-      const zone = this.add.zone(40, y, W - 80, rowH).setOrigin(0).setInteractive({ useHandCursor: true });
-      const line = this.add.rectangle(40, y + rowH - 1, W - 80, 1, 0x3b2a1a, 0.15).setOrigin(0);
-      const fr = this.text(48, y + 6, '', 24, INK);
-      const en = this.portrait
-        ? this.text(48, y + 36, '', 19, SUB)
-        : this.text(48 + Math.round((W - 96) * 0.45), y + 9, '', 19, SUB);
-      const dots = this.text(W - 48, y + 8, '', 20, NAME).setOrigin(1, 0);
-      zone.on('pointerdown', () => { if (zone.word) speech.speak(zone.word); });
-      this.jr.add([line, zone, fr, en, dots]);
-      this.jrRows.push({ zone, fr, en, dots });
-    }
-    this.topicIdx = 0;
-  }
-
-  showTopic(i) {
-    this.topicIdx = (i + TOPIC_ORDER.length) % TOPIC_ORDER.length;
-    const key = TOPIC_ORDER[this.topicIdx];
-    const topic = TOPICS[key];
-    const teacher = NPCS.find((n) => n.topic === key);
-    const stats = this.progress.topicStats(key, topic.words);
-    this.jrTitle.setText(`${topic.title}  ${'★'.repeat(stats.stars)}${'☆'.repeat(3 - stats.stars)}`);
-    this.jrSub.setText(`${topic.en} · ${stats.mastered}/${stats.total} mastered · Ask ${teacher.name.toLowerCase()}`);
-    topic.words.forEach((w, r) => {
-      const row = this.jrRows[r];
-      const seen = !this.progress.isNew(key, w);
-      const box = this.progress.get(key, w).box;
-      row.fr.setText(seen ? w.fr : '? ? ?').setColor(seen ? INK : SUB);
-      row.en.setText(w.en);
-      row.dots.setText(seen ? '●'.repeat(box) + '○'.repeat(MAX_BOX - box) : '').setColor(box >= MASTERED_BOX ? GOOD : NAME);
-      row.zone.word = seen ? w.fr : null;
+      this.arrangeOptions();
+      this.readyAt = this.time.now + 200;
     });
   }
 
-  openJournal() {
-    if (this.dlg.visible || this.world.busy) return;
-    this.world.busy = true;
-    this.sound.play('open', { volume: 0.4 });
-    this.showTopic(this.topicIdx);
-    this.jr.setVisible(true);
+  // ---------- interrogation and examination ----------
+
+  async interrogate(id) {
+    const d = DIALOGUE[id];
+    const g = this.state;
+    this.openDialogue();
+    if (!g.has(`met_${id}`)) {
+      await this.playLines(d.first);
+      g.set(`met_${id}`);
+    } else {
+      await this.playLines(d.greet);
+    }
+
+    for (;;) {
+      const topics = d.topics.filter((t) => (t.requires || []).every((r) => g.has(r)));
+      const options = topics.map((t) => {
+        const asked = g.wasAsked(id, t.id);
+        return { label: `${asked ? '✓ ' : '› '}${t.q}`, en: `${asked ? '✓ ' : '› '}${t.en}`, dim: asked, value: { type: 'topic', t } };
+      });
+      if (g.evidence().length) options.push({ label: '◆ Présenter une preuve', en: '◆ Present evidence', value: { type: 'evidence' } });
+      options.push({ label: '✕ Partir', en: '✕ Leave', value: { type: 'leave' } });
+
+      const pick = await this.menu(`${CAST[id].name.toUpperCase()} · ${CAST[id].role}`, options);
+      if (pick.type === 'leave') break;
+      if (pick.type === 'topic') {
+        await this.playLines(pick.t.lines);
+        g.markAsked(id, pick.t.id);
+        if (pick.t.end) {
+          this.closeDialogue();
+          await this.outro();
+          return;
+        }
+      } else {
+        const ev = await this.pickEvidence(id);
+        if (!ev) continue;
+        const reaction = d.evidence?.[ev];
+        if (!reaction) this.sfx('wrong', 0.25);
+        await this.playLines(reaction || d.wrong);
+      }
+    }
+    this.closeDialogue();
   }
 
-  closeJournal() {
-    this.jr.setVisible(false);
+  async examine(id) {
+    const clue = CLUES[id];
+    this.openDialogue();
+    await this.playLines(clue.lines);
+    if (this.state.addClue(id)) {
+      this.sfx('right', 0.3);
+      this.toast('INDICE AJOUTÉ', clue.name);
+    }
+    this.closeDialogue();
+  }
+
+  // ---------- tooltips ----------
+
+  buildTooltip() {
+    this.tip = this.add.container(0, 0).setDepth(250).setVisible(false);
+  }
+
+  wordTip(fr, en, obj) {
+    this.lock();
+    this.wordTappedAt = this.time.now;
+    this.hideTip();
+    speech.speak(fr);
+    const t1 = text(this, 12, 8, fr, 18, C.gold);
+    const t2 = text(this, 12, 32, en, 16, C.ink, { fontStyle: 'italic' });
+    const w = Math.max(t1.width, t2.width) + 24;
+    const g = drawPanel(this.add.graphics(), 0, 0, w, 60, 0.97);
+    const x = Phaser.Math.Clamp(obj.x + obj.width / 2 - w / 2, 8, this.W - w - 8);
+    this.tip.removeAll(true).add([g, t1, t2]).setPosition(x, obj.y - 68).setVisible(true);
+    this.tipShownAt = this.time.now;
+    this.tipTimer?.remove();
+    this.tipTimer = this.time.delayedCall(2600, () => this.hideTip());
+  }
+
+  hideTip() {
+    if (this.tip?.visible && this.time.now - (this.tipShownAt || 0) > 50) this.tip.setVisible(false);
+  }
+
+  // ---------- full-screen overlays (evidence, carnet) ----------
+
+  openOverlay(title) {
+    const { W, H } = this;
+    const c = this.add.container(0, 0).setDepth(150);
+    const dim = this.add.rectangle(0, 0, W, H, 0x000000, 0.7).setOrigin(0).setInteractive();
+    const g = drawPanel(this.add.graphics(), 14, 14, W - 28, H - 28, 0.97);
+    const t = text(this, PAD + 6, 34, title, 24, C.ink, { fontFamily: FONT_TITLE });
+    c.add([dim, g, t]);
+    this.overlay = c;
+    return c;
+  }
+
+  closeOverlay() {
+    this.overlay?.destroy();
+    this.overlay = null;
+    this.overlayKind = null;
     this.lock(300);
+  }
+
+  // Lays out items (each returns {obj, h}) into columns and pages, with ◀ ▶ controls.
+  pagedList(c, items, { top, bottom, cols }) {
+    const { W } = this;
+    const gap = 10;
+    const colW = (W - PAD * 2 - 12 - gap * (cols - 1)) / cols;
+    const built = items.map((it) => it(colW));
+    const pages = [[]];
+    let y = top;
+    for (let i = 0; i < built.length; i += cols) {
+      const row = built.slice(i, i + cols);
+      const rh = Math.max(...row.map((b) => b.h));
+      if (y + rh > bottom && pages[pages.length - 1].length) { pages.push([]); y = top; }
+      row.forEach((b, k) => { b.obj.setPosition(PAD + 6 + k * (colW + gap), y); c.add(b.obj); pages[pages.length - 1].push(b.obj); });
+      y += rh + gap;
+    }
+    let page = 0;
+    const label = text(this, W / 2, bottom + 22, '', 16, C.dim).setOrigin(0.5);
+    const show = (p) => {
+      page = Phaser.Math.Clamp(p, 0, pages.length - 1);
+      pages.forEach((objs, i) => objs.forEach((o) => o.setVisible(i === page)));
+      label.setText(pages.length > 1 ? `${page + 1} / ${pages.length}` : '');
+      prev.setEnabled(page > 0);
+      next.setEnabled(page < pages.length - 1);
+    };
+    const prev = makeButton(this, W / 2 - 130, bottom + 4, 60, 38, '◀', () => show(page - 1), { size: 16 });
+    const next = makeButton(this, W / 2 + 70, bottom + 4, 60, 38, '▶', () => show(page + 1), { size: 16 });
+    prev.c.setVisible(pages.length > 1);
+    next.c.setVisible(pages.length > 1);
+    c.add([label, prev.c, next.c]);
+    show(0);
+    return { prev: () => show(page - 1), next: () => show(page + 1) };
+  }
+
+  pickEvidence(who) {
+    return new Promise((resolve) => {
+      const c = this.openOverlay('Présenter une preuve');
+      this.overlayKind = 'picker';
+      const sub = text(this, PAD + 6, 66, `à ${CAST[who].name}`, 16, C.dim, { fontStyle: 'italic' });
+      c.add(sub);
+      const done = (v) => { this.closeOverlay(); this.pickerKeys = null; resolve(v); };
+      const items = this.state.evidence().map((e) => (w) => {
+        const label = e.kind === 'clue'
+          ? `▣ ${e.label}`
+          : `${CAST[e.who].name} : « ${e.label} »`;
+        const b = makeButton(this, 0, 0, w, 48, this.showEn ? (e.kind === 'clue' ? `▣ ${e.en}` : `${CAST[e.who].name}: "${e.en}"`) : label,
+          () => done(e.id), { size: 16, align: 'left' });
+        return { obj: b.c, h: b.h };
+      });
+      const cancel = makeButton(this, this.W - PAD - 130, 28, 130, 40, 'Annuler', () => done(null), { size: 16 });
+      c.add(cancel.c);
+      this.pickerKeys = this.pagedList(c, items, { top: 100, bottom: this.H - 76, cols: this.portrait ? 1 : 2 });
+      this.pickerCancel = () => done(null);
+    });
+  }
+
+  openCarnet(tab = 'indices') {
+    if (this.modal() || this.world.busy) return;
+    this.world.busy = true;
+    this.sfx('open', 0.3);
+    this.renderCarnet(tab);
+  }
+
+  renderCarnet(tab) {
+    this.overlay?.destroy();
+    const c = this.openOverlay('Carnet');
+    this.overlayKind = 'carnet';
+    const { W, H } = this;
+    const g = this.state;
+    const tabs = [['indices', `Indices (${g.clues.length})`], ['temoins', `Témoignages (${g.statements.length})`], ['mots', `Mots (${Object.keys(g.words).length})`]];
+    const tabW = Math.min(190, (W - PAD * 2 - 20) / 3);
+    tabs.forEach(([id, label], i) => {
+      const b = makeButton(this, PAD + i * (tabW + 10), 76, tabW, 40, label, () => this.renderCarnet(id), { size: 15 });
+      if (id !== tab) b.setDim(true);
+      c.add(b.c);
+    });
+    const close = makeButton(this, W - PAD - 120, 28, 120, 40, 'Fermer', () => this.closeCarnet(), { size: 16 });
+    const restart = makeButton(this, W - PAD - 120 - 10 - 150, 28, 150, 40, 'Recommencer', () => {
+      if (restart.armed) { g.reset(); window.location.reload(); return; }
+      restart.armed = true;
+      restart.setLabel('Sûr ?');
+    }, { size: 15 });
+    c.add([close.c, restart.c]);
+
+    const block = (lines) => (w) => {
+      const cont = this.add.container(0, 0);
+      let y = 0;
+      lines.forEach(([str, size, color, extra = {}]) => {
+        const t = text(this, 0, y, str, size, color, { wordWrap: { width: w, useAdvancedWrap: true }, ...extra });
+        cont.add(t);
+        y += t.height + 2;
+      });
+      return { obj: cont, h: y + 6 };
+    };
+
+    let items = [];
+    let cols = this.portrait ? 1 : 2;
+    if (tab === 'indices') {
+      items = g.clues.map((id) => block([
+        [CLUES[id].name, 19, C.gold, { fontFamily: FONT_TITLE }],
+        [CLUES[id].note.fr, 16, C.ink],
+        [CLUES[id].note.en, 14, C.dim, { fontStyle: 'italic' }],
+      ]));
+    } else if (tab === 'temoins') {
+      items = g.statements.map((id) => block([
+        [CAST[STATEMENTS[id].who].name, 17, C.name, { fontFamily: FONT_TITLE }],
+        [`« ${STATEMENTS[id].fr} »`, 16, C.ink],
+        [STATEMENTS[id].en, 14, C.dim, { fontStyle: 'italic' }],
+      ]));
+    } else {
+      cols = this.portrait ? 2 : 3;
+      items = Object.entries(g.words).map(([fr, en]) => (w) => {
+        const b = block([[fr, 17, C.gold], [en, 14, C.dim, { fontStyle: 'italic' }]])(w);
+        const z = this.add.zone(0, 0, w, b.h).setOrigin(0).setInteractive({ useHandCursor: true });
+        z.on('pointerdown', () => speech.speak(fr));
+        b.obj.add(z);
+        return b;
+      });
+    }
+    if (!items.length) {
+      c.add(text(this, PAD + 6, 140, 'Rien pour le moment.', 17, C.dim, { fontStyle: 'italic' }));
+    } else {
+      this.carnetKeys = this.pagedList(c, items, { top: 132, bottom: H - 76, cols });
+    }
+  }
+
+  closeCarnet() {
+    this.closeOverlay();
+    this.carnetKeys = null;
     this.world.busy = false;
+  }
+
+  // ---------- title cards ----------
+
+  async card(lines, title, subtitle) {
+    const { W, H } = this;
+    this.cardOpen = true;
+    this.world.busy = true;
+    const c = this.add.container(0, 0).setDepth(300);
+    const bg = this.add.rectangle(0, 0, W, H, 0x000000, 1).setOrigin(0);
+    c.add(bg);
+    const cw = Math.min(W - 70, 700);
+    const x0 = (W - cw) / 2;
+    let y = this.portrait ? H * 0.22 : H * 0.16;
+    const enTexts = [];
+    const en = makeButton(this, W - 76, H - 58, 56, 36, 'EN', () => {
+      this.cardEn = !this.cardEn;
+      enTexts.forEach((t) => t.setVisible(this.cardEn));
+    }, { size: 15 });
+    c.add(en.c);
+
+    for (const l of lines) {
+      const rt = new RichText(this, x0, y, cw, { size: this.portrait ? 21 : 22, onWord: (fr, e, obj) => this.wordTip(fr, e, obj) });
+      rt.setText(l.fr, { italic: true, color: '#d9d2c3' });
+      c.add(rt.container);
+      glosses(l.fr).forEach((gl) => this.state.addWord(gl.fr, gl.en));
+      const t = text(this, x0, y + rt.height, l.en, 15, C.dim, { fontStyle: 'italic', wordWrap: { width: cw } }).setVisible(!!this.cardEn);
+      c.add(t);
+      enTexts.push(t);
+      y += rt.height + 26;
+      rt.reveal(70);
+      await this.waitTap(rt);
+      this.sfx('click', 0.1);
+    }
+    if (title) {
+      const t1 = text(this, W / 2, y + 30, title, this.portrait ? 26 : 30, C.ink, { fontFamily: FONT_TITLE, align: 'center', wordWrap: { width: cw } }).setOrigin(0.5, 0).setAlpha(0);
+      const t2 = text(this, W / 2, y + 30 + t1.height + 14, subtitle || '', 16, C.dim, { align: 'center', fontStyle: 'italic', wordWrap: { width: cw } }).setOrigin(0.5, 0).setAlpha(0);
+      c.add([t1, t2]);
+      this.tweens.add({ targets: [t1, t2], alpha: 1, duration: 900 });
+      this.audio?.thunder();
+      await this.waitTap();
+    }
+    await new Promise((r) => this.tweens.add({ targets: c, alpha: 0, duration: 700, onComplete: r }));
+    c.destroy();
+    this.cardOpen = false;
+    this.lock(300);
+  }
+
+  async begin() {
+    if (!this.state.has('intro_seen')) {
+      await this.card(INTRO, CHAPTER.title.toUpperCase(), CHAPTER.titleEn);
+      this.state.set('intro_seen');
+    }
+    this.world.busy = false;
+  }
+
+  async outro() {
+    await this.card(OUTRO, 'FIN DU CHAPITRE 1', 'Chapitre 2 — La nuit du crime · bientôt\nChapter 2 — The Night of the Crime · coming soon');
+    this.state.set('outro_seen');
+    this.updateHud();
   }
 
   // ---------- keyboard ----------
 
   onKey(e) {
     const k = e.key;
-    if (this.jr.visible) {
-      if (k === 'Escape' || k === 'j' || k === 'J') this.closeJournal();
-      else if (k === 'ArrowLeft') this.showTopic(this.topicIdx - 1);
-      else if (k === 'ArrowRight') this.showTopic(this.topicIdx + 1);
+    if (this.overlay) {
+      if (k === 'Escape') {
+        if (this.overlayKind === 'carnet') this.closeCarnet(); else this.pickerCancel?.();
+      }
+      const keys = this.overlayKind === 'carnet' ? this.carnetKeys : this.pickerKeys;
+      if (k === 'ArrowLeft') keys?.prev();
+      if (k === 'ArrowRight') keys?.next();
       return;
     }
-    if (this.dlg.visible) {
-      if (this.choose && /^[1-9]$/.test(k)) this.choose(Number(k) - 1);
-      else if (k === ' ' || k === 'Enter' || k === 'e' || k === 'E') this.continue();
+    if (this.options.length && /^[1-9]$/.test(k)) {
+      const o = this.options[Number(k) - 1];
+      if (o && this.menuResolve && this.time.now >= this.readyAt) {
+        const r = this.menuResolve;
+        this.clearOptions();
+        r(o.value);
+      }
       return;
     }
-    if ((k === 'j' || k === 'J') && !this.world.busy) this.openJournal();
+    if (this.options.length && k === 'Escape') {
+      const leave = this.options.find((o) => o.value.type === 'leave');
+      if (leave) { const r = this.menuResolve; this.clearOptions(); r(leave.value); }
+      return;
+    }
+    if (k === ' ' || k === 'Enter' || k === 'e' || k === 'E') { this.continue(); return; }
+    if ((k === 'c' || k === 'C') && !this.modal()) this.openCarnet();
   }
 }
