@@ -1,17 +1,28 @@
-# French Language RPG (FRPG)
+# French Language RPG — Belleville
 
-A simple pixel RPG to help players learn and improve their French. Built with HTML/JS and [Phaser 3](https://phaser.io), with no build step.
+A pixel RPG for learning French. Walk around the town of Belleville and talk to the townspeople; each one teaches a topic through short quizzes. Built with HTML/JS and [Phaser 3](https://phaser.io), with no build step.
 
 ## Play
 
-Once GitHub Pages is enabled (Settings → Pages → Deploy from branch → `main` / root), the game is at:
+Enable GitHub Pages (Settings → Pages → Deploy from branch → `main` / root), then play at
 https://robert4lyf.github.io/FRPG/
 
-Controls: arrow keys/WASD or tap to move. Walk into a character to talk. Answer with 1–3 or by tapping.
+- **Move:** arrow keys / WASD, or tap where you want to go (the player pathfinds around obstacles).
+- **Talk:** tap a person, or press Space/E next to them.
+- **Answer:** tap a button or press 1–3. Tap or Space to continue.
+- **Carnet (notebook):** shows every word, your progress, and plays pronunciation. Key: J.
+
+## How learning works
+
+- 10 townspeople, 10 topics, 80 words (`src/data/topics.js`).
+- New words are introduced before they're tested.
+- Three question types: French → English, English → French, and listening (uses the browser's built-in French voice when one is installed).
+- Spaced repetition (Leitner boxes): right answers move a word up a box, wrong answers send it back to box 0, and weaker words come up more often. Box 3+ counts as mastered. Progress is saved in the browser.
+- Stars above each person show how much of their topic you've mastered.
 
 ## Run locally
 
-ES modules need a web server, so opening `index.html` directly won't work:
+ES modules need a web server:
 
 ```
 python3 -m http.server
@@ -22,17 +33,25 @@ Then open http://localhost:8000.
 ## Layout
 
 ```
-index.html               entry point (loads Phaser from CDN)
-src/main.js              game config
-src/scenes/WorldScene.js map, player, NPCs, movement
-src/ui/DialogueBox.js    dialogue and multiple-choice UI
-src/quiz.js              question generator
-src/data/vocab.js        vocabulary by topic, and NPC definitions
+index.html                 entry point (Phaser from CDN, pixel font)
+src/main.js                game config, sizes the game to the screen shape
+src/scenes/BootScene.js    asset loading, walk animations
+src/scenes/WorldScene.js   tilemap, player, NPCs, camera, tap-to-move pathfinding
+src/scenes/UIScene.js      dialogue, quiz buttons, HUD, Carnet
+src/world/town.js          town layout (built in code from tile indices)
+src/world/tiles.js         tile index reference for the urban tileset
+src/data/topics.js         vocabulary
+src/data/npcs.js           townspeople, positions, greetings
+src/learning/              quiz generator, spaced repetition, speech
+assets/                    sprites, UI, sounds, font (see assets/CREDITS.md)
 ```
 
 ## Adding content
 
-- New words: add `{ fr, en }` entries to a topic in `src/data/vocab.js`. Each topic needs at least 3 words.
-- New character: add an entry to `NPCS` with a tile position, name, topic and greeting.
+- **Words:** add `{ fr, en }` to a topic in `src/data/topics.js` (minimum 3 per topic).
+- **Person:** add an entry to `NPCS` in `src/data/npcs.js` with a walkable tile position, sprite (1–5), topic and greeting.
+- **Map:** edit `src/world/town.js`; tile numbers are listed in `src/world/tiles.js`.
 
-Graphics are placeholder pixel art drawn in code; real sprites can go in `assets/` later.
+## Credits
+
+Art, UI and sounds by [Kenney](https://kenney.nl) (CC0). Font: Pixelify Sans (OFL). Details in `assets/CREDITS.md`.
