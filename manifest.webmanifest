@@ -1,0 +1,15 @@
+{
+  "name": "Belleville · French RPG",
+  "short_name": "Belleville",
+  "description": "A pixel RPG for learning French.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#2b2d42",
+  "theme_color": "#2b2d42",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

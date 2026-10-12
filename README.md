@@ -12,6 +12,13 @@ https://robert4lyf.github.io/FRPG/
 - **Answer:** tap a button or press 1–3. Tap or Space to continue.
 - **Carnet (notebook):** shows every word, your progress, and plays pronunciation. Key: J.
 
+### Install on your phone (full-screen, no address bar)
+
+- **iPhone (Safari):** Share → Add to Home Screen.
+- **Android (Chrome):** ⋮ menu → Add to Home screen / Install app.
+
+Then open Belleville from the home-screen icon.
+
 ## How learning works
 
 - 10 townspeople, 10 topics, 80 words (`src/data/topics.js`).
