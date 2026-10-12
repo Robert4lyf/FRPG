@@ -11,8 +11,9 @@
       font-weight: 400 700;
       font-display: block;
     }
-    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-    #game { width: 100vw; height: 100vh; touch-action: none; }
+    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; overscroll-behavior: none; }
+    /* dvh = the visible height, excluding the mobile address bar (100vh includes it). */
+    #game { position: fixed; inset: 0; width: 100%; height: 100%; height: 100dvh; touch-action: none; }
     canvas { image-rendering: pixelated; }
   </style>
 </head>
