@@ -1,14 +1,15 @@
 import { buildTown, MAP_W, MAP_H, OY, SIGNS } from '../world/town.js';
-import { charFrame } from '../world/tiles.js';
+import { castFrame } from '../world/costumes.js';
 import { CAST, CLUES, CHAPTER } from '../story/chapter1.js';
 import { NightLighting, gradeCamera } from '../fx/noir.js';
+import { buildWetStreets, buildPoliceCar } from '../fx/street.js';
 import { FONT_TITLE } from '../ui/theme.js';
 
 const TILE = 16;
 const ZOOM = 3;
 const SPEED = 62; // a measured walk, not a jog
 const REACH = 22; // px between feet to interact
-const PLAYER_CHAR = 5;
+const PLAYER_COSTUME = 'inspector';
 const LAYERS = ['ground', 'grass', 'water', 'building', 'facade', 'object', 'overhead'];
 const SOLID_LAYERS = ['water', 'building', 'object'];
 const OPPOSITE = { left: 'right', right: 'left', up: 'down', down: 'up' };
@@ -42,6 +43,7 @@ export default class WorldScene extends Phaser.Scene {
     gradeCamera(cam);
 
     this.lighting = new NightLighting(this, MAP_W * TILE, MAP_H * TILE, this.town.lights);
+    buildWetStreets(this, this.town.lights, this.town.puddles, OY);
 
     this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT');
     ['SPACE', 'E', 'ENTER'].forEach((k) => this.input.keyboard.on(`keydown-${k}`, () => this.tryInteract()));
@@ -177,6 +179,10 @@ export default class WorldScene extends Phaser.Scene {
     }
     this.solidProps = this.physics.add.staticGroup();
     this.town.props.forEach((p) => {
+      if (p.kind === 'policecar') {
+        this.physics.add.collider(this.player, buildPoliceCar(this, p.x, p.y, OY));
+        return;
+      }
       if (p.kind !== 'floodlight') return;
       const x = p.x * TILE + 8;
       const y = (p.y + OY) * TILE + 14;
@@ -214,15 +220,15 @@ export default class WorldScene extends Phaser.Scene {
 
   buildCharacters() {
     const start = CHAPTER.playerStart;
-    this.player = this.physics.add.sprite(centre(start.x), centre(start.y + OY), 'urban', charFrame(PLAYER_CHAR, 'up', 0));
+    this.player = this.physics.add.sprite(centre(start.x), centre(start.y + OY), 'cast', castFrame(PLAYER_COSTUME, 'up', 0));
     this.player.body.setSize(10, 6).setOffset(3, 10);
     this.player.setCollideWorldBounds(true);
-    this.player.char = PLAYER_CHAR;
+    this.player.costume = PLAYER_COSTUME;
     this.player.dir = 'up';
     SOLID_LAYERS.forEach((n) => this.physics.add.collider(this.player, this.layers[n]));
 
     this.people = Object.entries(CAST).map(([id, c]) => {
-      const s = this.physics.add.sprite(centre(c.x), centre(c.y + OY), 'urban', charFrame(c.char, 'down', 0));
+      const s = this.physics.add.sprite(centre(c.x), centre(c.y + OY), 'cast', castFrame(id, 'down', 0));
       s.body.setSize(12, 8).setOffset(2, 8).setImmovable(true);
       Object.assign(s, { kind: 'person', id, info: c, tx: c.x, ty: c.y + OY });
       s.setDepth(10 + s.y / 1000);
@@ -234,7 +240,7 @@ export default class WorldScene extends Phaser.Scene {
     this.time.addEvent({
       delay: 2800, loop: true, callback: () => {
         const s = Phaser.Utils.Array.GetRandom(this.people);
-        if (s !== this.talkingTo) s.setFrame(charFrame(s.info.char, Phaser.Utils.Array.GetRandom(['down', 'down', 'left', 'right']), 0));
+        if (s !== this.talkingTo) s.setFrame(castFrame(s.id, Phaser.Utils.Array.GetRandom(['down', 'down', 'left', 'right']), 0));
       },
     });
   }
@@ -381,7 +387,7 @@ export default class WorldScene extends Phaser.Scene {
 
     if (s.kind === 'person') {
       this.talkingTo = s;
-      s.setFrame(charFrame(s.info.char, OPPOSITE[dir], 0));
+      s.setFrame(castFrame(s.id, OPPOSITE[dir], 0));
       await ui.interrogate(s.id);
       this.talkingTo = null;
     } else {
@@ -400,7 +406,7 @@ export default class WorldScene extends Phaser.Scene {
 
   idle() {
     this.player.anims.stop();
-    this.player.setFrame(charFrame(this.player.char, this.player.dir, 0));
+    this.player.setFrame(castFrame(this.player.costume, this.player.dir, 0));
   }
 
   // If the device struggles, drop the full-screen colour grading (the most expensive effect).
@@ -475,7 +481,7 @@ export default class WorldScene extends Phaser.Scene {
     if (len) {
       p.setVelocity((vx / len) * speed, (vy / len) * speed);
       p.dir = dirOf(vx, vy);
-      p.anims.play(`c${p.char}-${p.dir}`, true);
+      p.anims.play(`${p.costume}-${p.dir}`, true);
       p.anims.timeScale = 0.85;
     } else {
       p.setVelocity(0);

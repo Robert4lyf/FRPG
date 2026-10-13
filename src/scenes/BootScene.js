@@ -1,4 +1,4 @@
-import { charFrame } from '../world/tiles.js';
+import { buildCastTexture, castFrame, COSTUME_IDS } from '../world/costumes.js';
 import GameState from '../story/state.js';
 import { makeFxTextures } from '../fx/noir.js';
 import { FONT_TITLE } from '../ui/theme.js';
@@ -21,17 +21,18 @@ export default class BootScene extends Phaser.Scene {
   }
 
   create() {
-    // Walk cycle per character and direction: step A, stand, step B, stand.
-    for (let c = 0; c < 6; c++) {
+    // Noir costumes recoloured from the urban pack, then a walk cycle per costume and direction.
+    buildCastTexture(this);
+    COSTUME_IDS.forEach((id) => {
       ['left', 'down', 'up', 'right'].forEach((dir) => {
         this.anims.create({
-          key: `c${c}-${dir}`,
-          frames: [1, 0, 2, 0].map((s) => ({ key: 'urban', frame: charFrame(c, dir, s) })),
+          key: `${id}-${dir}`,
+          frames: [1, 0, 2, 0].map((s) => ({ key: 'cast', frame: castFrame(id, dir, s) })),
           frameRate: 7,
           repeat: -1,
         });
       });
-    }
+    });
     makeFxTextures(this);
     this.registry.set('state', new GameState());
     this.scene.start('World');

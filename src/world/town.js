@@ -131,6 +131,8 @@ export function buildTown() {
   set('object', 20, 17, T.barrier[0]); set('object', 27, 17, T.barrier[1]);
   // Police floodlight on a tripod, left of the body, aimed at the chalk outline.
   props.push({ kind: 'floodlight', x: 20, y: 15 });
+  // Police car parked beside the scene (two tiles wide).
+  props.push({ kind: 'policecar', x: 15, y: 17 }, { kind: 'block', x: 16, y: 17 });
   light(23, 14.7, 58, 'flood', [{ x: 20.5 + 5 / 16, y: 15 - 6 / 16, r: 6 }]);
 
   // Park (east) with pond, trees and benches
@@ -177,5 +179,11 @@ export function buildTown() {
     || L.water[y * MAP_W + x] !== -1
     || props.some((p) => p.x === x && p.y + OY === y);
 
-  return { layers: L, isSolid, lights, props };
+  // Puddles: [x, y, scale] in street tiles.
+  const puddles = [
+    [22, 18, 1], [27.5, 16, 0.8], [14, 9, 1.1], [10.5, 7.6, 0.8], [33.5, 8.2, 0.9],
+    [18.5, 21, 0.9], [29, 23.5, 1], [6, 28.6, 1.2], [26, 29.3, 1], [41, 28.4, 0.9], [44.5, 7.8, 0.8],
+  ];
+
+  return { layers: L, isSolid, lights, props, puddles };
 }
