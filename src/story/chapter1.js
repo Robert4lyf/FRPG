@@ -94,6 +94,7 @@ export const OBJECTIVES = [
   { fr: 'Examinez la scène du crime.', en: 'Examine the crime scene.', done: (g) => g.clueCount() >= 4, count: (g) => `${g.clueCount()}/4` },
   { fr: 'Interrogez les témoins. Quelqu\'un ment.', en: 'Question the witnesses. Someone is lying.', done: (g) => g.has('lebrun_confessed') },
   { fr: 'Retournez voir le brigadier Dubois.', en: 'Go back to Sergeant Dubois.', done: (g) => g.has('chapter1_done') },
+  { fr: 'Rédigez votre rapport.', en: 'Write your report.', done: (g) => g.has('report_done') },
   { fr: 'Fin du chapitre 1. Belleville vous attend.', en: 'End of chapter 1. Belleville is waiting.', done: () => false },
 ];
 
@@ -358,4 +359,32 @@ export const DIALOGUE = {
     ],
     wrong: [{ s: 'roux', fr: 'Moi, je fais du pain, inspecteur.', en: 'I make bread, inspector.' }],
   },
+};
+
+// End-of-chapter case report. Each line has one blank ({}) and three options; `answer` is the
+// index of the right one. Distractors are words the player has met, so the report doubles as review.
+export const REPORT = {
+  header: 'GENDARMERIE DE BELLEVILLE',
+  title: 'RAPPORT D\'ENQUÊTE',
+  case: 'Affaire : Hélène Marchand — le 31 octobre',
+  intro: [
+    { s: 'dubois', fr: 'Le [[juge|judge]] veut un [[rapport|report]] ce soir. Écrivez-le, inspecteur.', en: 'The judge wants a report tonight. Write it, inspector.' },
+  ],
+  lines: [
+    { fr: 'La victime, Hélène Marchand, était {}.', en: 'The victim, Hélène Marchand, was a pharmacist.', options: ['pharmacienne', 'boulangère', 'serveuse'], answer: 0 },
+    { fr: 'Le jardinier l\'a trouvée dans {} à cinq heures et demie.', en: 'The gardener found her in the fountain at half past five.', options: ['le parc', 'la fontaine', 'le café'], answer: 1 },
+    { fr: 'Sa {} s\'est arrêtée à vingt-trois heures quarante.', en: 'Her watch stopped at twenty to midnight.', options: ['lettre', 'écharpe', 'montre'], answer: 2 },
+    { fr: 'Son argent était dans son sac : ce n\'est pas un {}.', en: "Her money was in her bag: it isn't a theft.", options: ['vol', 'cri', 'rendez-vous'], answer: 0 },
+    { fr: 'Le chauffeur a vu Lebrun près de la fontaine. Lebrun a {}.', en: 'The driver saw Lebrun near the fountain. Lebrun lied.', options: ['dormi', 'menti', 'pleuré'], answer: 1 },
+    { fr: 'À la fontaine, Hélène se {} avec une femme.', en: 'At the fountain, Hélène was arguing with a woman.', options: ['noyait', 'couchait', 'disputait'], answer: 2 },
+    { fr: 'Près de la fontaine, il y avait une écharpe {}.', en: 'Near the fountain, there was a red scarf.', options: ['rouge', 'noire', 'blanche'], answer: 0 },
+    { fr: 'Elle a reçu un {} à la tête avant de tomber dans l\'eau.', en: 'She was struck on the head before falling into the water.', options: ['cri', 'coup', 'café'], answer: 1 },
+  ],
+  conclusion: { fr: 'Conclusion : ce n\'est pas un accident. C\'est un meurtre.', en: "Conclusion: it isn't an accident. It's a murder." },
+  stamp: 'MEURTRE',
+  verdict: [
+    { max: 0, line: { s: 'dubois', fr: 'Impeccable. Le juge sera content.', en: 'Flawless. The judge will be pleased.' } },
+    { max: 2, line: { s: 'dubois', fr: 'Pas mal, pour quelqu\'un de Lyon.', en: 'Not bad, for someone from Lyon.' } },
+    { max: 99, line: { s: 'dubois', fr: 'Le juge va avoir des questions...', en: 'The judge is going to have questions...' } },
+  ],
 };

@@ -21,6 +21,8 @@ export default class GameState {
       statements: d.statements,
       words: d.words,
       asked: new Set(d.asked),
+      review: d.review || {},
+      looked: d.looked || {},
     };
   }
 
@@ -30,6 +32,8 @@ export default class GameState {
     this.statements = [];
     this.words = {}; // fr -> en
     this.asked = new Set(); // `${who}:${topic}`
+    this.review = {}; // fr -> times got wrong in a report (to bring back in later chapters)
+    this.looked = {}; // fr -> times the player tapped it for a translation
     if (save) this.save();
   }
 
@@ -37,7 +41,7 @@ export default class GameState {
     try {
       localStorage.setItem(KEY, JSON.stringify({
         flags: [...this.flags], clues: this.clues, statements: this.statements,
-        words: this.words, asked: [...this.asked],
+        words: this.words, asked: [...this.asked], review: this.review, looked: this.looked,
       }));
     } catch { /* ignore */ }
     this.listeners?.forEach((fn) => fn());
@@ -77,6 +81,17 @@ export default class GameState {
     this.words[key] = en;
     this.save();
     return true;
+  }
+
+  addReview(fr) {
+    this.review[fr] = (this.review[fr] || 0) + 1;
+    this.save();
+  }
+
+  markLooked(fr) {
+    const key = fr.toLowerCase();
+    this.looked[key] = (this.looked[key] || 0) + 1;
+    this.save();
   }
 
   markAsked(who, topic) {

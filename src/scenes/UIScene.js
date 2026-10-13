@@ -1,11 +1,12 @@
 import {
-  CAST, CLUES, STATEMENTS, DIALOGUE, INTRO, OUTRO, OBJECTIVES, CHAPTER,
+  CAST, CLUES, STATEMENTS, DIALOGUE, INTRO, OUTRO, OBJECTIVES, CHAPTER, REPORT,
 } from '../story/chapter1.js';
 import { speech } from '../learning/speech.js';
 import {
   C, FONT_TITLE, drawPanel, text, makeButton, RichText, plainText, glosses,
 } from '../ui/theme.js';
 import { Weather, NoirAudio } from '../fx/noir.js';
+import { runReport } from '../ui/report.js';
 
 const SOUND_KEY = 'frpg.sound';
 const PAD = 30;
@@ -334,6 +335,7 @@ export default class UIScene extends Phaser.Scene {
         g.markAsked(id, pick.t.id);
         if (pick.t.end) {
           this.closeDialogue();
+          await this.report();
           await this.outro();
           return;
         }
@@ -368,6 +370,7 @@ export default class UIScene extends Phaser.Scene {
   wordTip(fr, en, obj) {
     this.lock();
     this.wordTappedAt = this.time.now;
+    this.state.markLooked(fr);
     this.hideTip();
     speech.speak(fr);
     const t1 = text(this, 12, 8, fr, 18, C.gold);
@@ -587,7 +590,33 @@ export default class UIScene extends Phaser.Scene {
       await this.card(INTRO, CHAPTER.title.toUpperCase(), CHAPTER.titleEn);
       this.state.set('intro_seen');
     }
+    // Resume if the game was closed between the reveal and the end of the report.
+    if (this.state.has('chapter1_done') && !this.state.has('report_done')) {
+      await this.report();
+    }
+    if (this.state.has('report_done') && !this.state.has('outro_seen')) {
+      await this.outro();
+    }
     this.world.busy = false;
+  }
+
+  // Dubois asks for the report; the player types it up; Dubois gives a verdict.
+  async report() {
+    this.world.busy = true;
+    this.cardOpen = true;
+    this.openDialogue();
+    await this.playLines(REPORT.intro);
+    this.closeDialogue();
+    this.carnetBtn.c.setVisible(false);
+    this.soundBtn.c.setVisible(false);
+    const mistakes = await runReport(this);
+    this.state.set('report_done');
+    this.openDialogue();
+    const v = REPORT.verdict.find((x) => mistakes <= x.max);
+    await this.playLines([v.line]);
+    this.closeDialogue();
+    this.cardOpen = false;
+    this.updateHud();
   }
 
   async outro() {
@@ -600,6 +629,7 @@ export default class UIScene extends Phaser.Scene {
 
   onKey(e) {
     const k = e.key;
+    if (this.reportKeys) { this.reportKeys(k); return; }
     if (this.overlay) {
       if (k === 'Escape') {
         if (this.overlayKind === 'carnet') this.closeCarnet(); else this.pickerCancel?.();

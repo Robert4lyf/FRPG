@@ -14,6 +14,7 @@ https://robert4lyf.github.io/FRPG/
 - **Questioning:** pick a question, or **Présenter une preuve** to confront someone with a clue or another witness's statement.
 - **Help with French:** tap any gold word for its meaning and pronunciation. Tap **EN** to see the English for a line. Tap the objective box for English too.
 - **Carnet (notebook):** clues, witness statements, and every vocabulary word you've met. Key: C.
+- **Le rapport:** each chapter ends with you typing up the case report, filling blanks from French options. Mistakes cost nothing but are saved as words to bring back in later chapters.
 
 ### Install on your phone (full-screen, no address bar)
 
