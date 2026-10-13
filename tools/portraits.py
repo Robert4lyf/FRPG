@@ -9,7 +9,8 @@ import os
 from PIL import Image
 
 S = 48
-OUT = os.path.join(os.path.dirname(__file__), '..', 'assets', 'portraits')
+# Hand-drawn placeholders (superseded by tools/import_portraits.py); kept for reference.
+OUT = os.path.join(os.path.dirname(__file__), 'source', 'drawn_portraits')
 LIGHT = (-0.82, -0.32, 0.47)  # warm lamp from the left: hard side light
 RIM = (120, 146, 214)  # cool moonlight rim on the shadow side
 OUTLINE = (12, 13, 22, 255)

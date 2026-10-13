@@ -165,7 +165,7 @@ export default class UIScene extends Phaser.Scene {
   // ---------- dialogue panel ----------
 
   linePanelH() {
-    return this.portrait ? 300 : 210;
+    return this.portrait ? 300 : 226;
   }
 
   panelHeight() {
@@ -186,7 +186,7 @@ export default class UIScene extends Phaser.Scene {
     this.enBtn = makeButton(this, 0, 0, 56, 34, 'EN', () => this.toggleEn(), { size: 15 });
     this.ttsBtn = makeButton(this, 0, 0, 56, 34, '♪', () => speech.speak(this.currentFr), { size: 17 });
     // Speaker portrait at the left of the text box, with a blink now and then.
-    this.portraitZoom = this.portrait ? 2 : 3;
+    this.portraitZoom = this.portrait ? 1.5 : 2;
     this.portraitFrame = this.add.graphics();
     this.portraitImg = this.add.image(0, 0, 'portrait_inspector', 0).setOrigin(0).setScale(this.portraitZoom).setVisible(false);
     this.dlg.add([this.dlgG, this.portraitFrame, this.portraitImg, this.speaker, this.body.container, this.bodyEn, this.hint, this.enBtn.c, this.ttsBtn.c]);
@@ -248,7 +248,7 @@ export default class UIScene extends Phaser.Scene {
       this.portraitImg.setVisible(false);
       return PAD;
     }
-    const size = 48 * this.portraitZoom;
+    const size = 96 * this.portraitZoom;
     const x = PAD - 6;
     const y = top + 16;
     this.portraitFrame.fillStyle(0x161a2c, 1).fillRect(x, y, size, size);
