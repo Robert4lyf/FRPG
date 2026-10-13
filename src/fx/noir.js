@@ -8,13 +8,15 @@ export function makeFxTextures(scene) {
   if (!tex.exists('light')) {
     const c = tex.createCanvas('light', 128, 128);
     const ctx = c.getContext();
-    // Three hard-edged bands, like hand-drawn pixel-art lighting, rather than a soft blur.
-    [[64, 0.35], [50, 0.7], [34, 1]].forEach(([r, a]) => {
-      ctx.fillStyle = `rgba(255,255,255,${a})`;
-      ctx.beginPath();
-      ctx.arc(64, 64, r, 0, Math.PI * 2);
-      ctx.fill();
-    });
+    // Soft, wide fall-off so lamplight spreads gently into the surrounding night.
+    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.3, 'rgba(255,255,255,0.88)');
+    g.addColorStop(0.55, 'rgba(255,255,255,0.55)');
+    g.addColorStop(0.8, 'rgba(255,255,255,0.2)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 128, 128);
     c.refresh();
   }
 
@@ -96,15 +98,15 @@ export class NightLighting {
     // Sodium-yellow street lamps, amber windows, a paler floodlight.
     // Each light = a multiply tint (turns the lit ground yellow without bleaching it)
     // plus a faint additive bloom.
-    const colour = { lamp: 0xffc23a, window: 0xffa53a, flood: 0xffe7a8 };
+    const colour = { lamp: 0xffb020, window: 0xff9428, flood: 0xffdc8a };
     this.glows = this.lights.map((l) => {
       const tint = scene.add.image(l.x, l.y, 'light')
-        .setScale((l.radius * 2) / 128).setTint(colour[l.kind]).setAlpha(0.9)
+        .setScale((l.radius * 2) / 128).setTint(colour[l.kind]).setAlpha(1)
         .setBlendMode(Phaser.BlendModes.MULTIPLY).setDepth(2055);
       const bloom = scene.add.image(l.x, l.y, 'light')
-        .setScale((l.radius * 1.2) / 128).setTint(colour[l.kind]).setAlpha(0.1)
+        .setScale((l.radius * 1.6) / 128).setTint(colour[l.kind]).setAlpha(0.14)
         .setBlendMode(Phaser.BlendModes.ADD).setDepth(2060);
-      return { tint, bloom, setAlpha(a) { tint.setAlpha(0.9 * a); bloom.setAlpha(0.1 * a); } };
+      return { tint, bloom, setAlpha(a) { tint.setAlpha(a); bloom.setAlpha(0.14 * a); } };
     });
   }
 
@@ -131,7 +133,7 @@ export class NightLighting {
         this.glows[i].setAlpha(a);
       }
       if (visible(l.x, l.y, l.radius)) {
-        rt.stamp('light', undefined, l.x - ox, l.y - oy, { scale: (l.radius * 2) / 128, erase: true, alpha: a * l.strength * 0.85 });
+        rt.stamp('light', undefined, l.x - ox, l.y - oy, { scale: (l.radius * 2) / 128, erase: true, alpha: a * l.strength * 0.9 });
       }
     });
     this.movers.forEach((m) => {

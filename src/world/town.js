@@ -56,7 +56,7 @@ export function buildTown() {
   const light = (x, y, radius, kind) => lights.push({ x: x * 16, y: (y + OY) * 16, radius, kind });
   const lamp = (x, y) => {
     set('object', x, y, T.lampPole); set('overhead', x, y - 1, T.lampTop);
-    light(x + 0.5, y + 0.6, 46, 'lamp');
+    light(x + 0.5, y + 0.6, 60, 'lamp');
   };
   const sign = (x, y) => { set('object', x, y, T.signPole); set('overhead', x, y - 1, T.signTop); };
 
@@ -96,9 +96,9 @@ export function buildTown() {
   building({ x: 41, y: 0, w: 6, roof: T.roofGrey9, brick: T.brickRed, parts: [...shopfront(0), { x: 4, y: 1, t: T.glassDoor }, { x: 4, y: 0, t: T.window }] });
 
   // Lit windows: the café and the bakery are open before dawn; a lamp burns in the mairie.
-  light(2.5 + 1.5, 6.2, 34, 'window');
-  light(11 + 1.5, 6.2, 36, 'window');
-  light(19 + 5.5, 5.2, 22, 'window');
+  light(2.5 + 1.5, 6.4, 48, 'window');
+  light(11 + 1.5, 6.4, 50, 'window');
+  light(19 + 5.5, 5.6, 32, 'window');
 
   // Street furniture along the north pavement
   [9, 18, 31, 40].forEach((x) => lamp(x, 7));
@@ -119,7 +119,7 @@ export function buildTown() {
 
   // Crime scene: police barriers and a floodlight on the south side of the fountain
   set('object', 20, 17, T.barrier[0]); set('object', 27, 17, T.barrier[1]);
-  light(23.5, 14.6, 52, 'flood');
+  light(23.5, 14.6, 66, 'flood');
 
   // Park (east) with pond, trees and benches
   nine('grass', 31, 9, 16, 16, T.grass9);

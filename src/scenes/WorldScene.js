@@ -30,6 +30,7 @@ export default class WorldScene extends Phaser.Scene {
 
     this.buildMap();
     this.buildCrimeScene();
+    this.buildFountain();
     this.buildCharacters();
     this.buildClues();
     this.buildLabels();
@@ -41,7 +42,7 @@ export default class WorldScene extends Phaser.Scene {
 
     this.lighting = new NightLighting(this, MAP_W * TILE, MAP_H * TILE, this.town.lights);
     // A faint pool around the inspector only; the moonlight keeps everyone else visible.
-    this.lighting.follow(this.player, 22, 0.3);
+    this.lighting.follow(this.player, 30, 0.22);
 
     this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT');
     ['SPACE', 'E', 'ENTER'].forEach((k) => this.input.keyboard.on(`keydown-${k}`, () => this.tryInteract()));
@@ -69,6 +70,91 @@ export default class WorldScene extends Phaser.Scene {
     });
     SOLID_LAYERS.forEach((n) => this.layers[n].setCollisionByExclusion([-1]));
     this.physics.world.setBounds(0, 0, MAP_W * TILE, MAP_H * TILE);
+  }
+
+  // A two-tier stone fountain in the middle of the pool, drawn in the tileset's palette,
+  // with water arcing from the top and ripples in the basin.
+  buildFountain() {
+    if (!this.textures.exists('fountain')) {
+      const W = 30;
+      const H = 40;
+      const c = this.textures.createCanvas('fountain', W, H);
+      const ctx = c.getContext();
+      const px = (x, y, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(x, y, w, h); };
+      const ellipse = (cx, cy, rx, ry, col) => {
+        ctx.fillStyle = col;
+        for (let y = -ry; y <= ry; y++) {
+          const half = Math.round(rx * Math.sqrt(1 - (y * y) / (ry * ry)));
+          ctx.fillRect(cx - half, cy + y, half * 2, 1);
+        }
+      };
+      const OUT = '#4b4763';
+      const DARK = '#7d7896';
+      const MID = '#a7a3bd';
+      const LIGHT = '#cfcbe0';
+      const WATER = '#5fb6e0';
+      const WATER_L = '#9fdcf5';
+      // Lower basin (sits in the pool)
+      ellipse(15, 33, 14, 6, OUT);
+      ellipse(15, 32, 13, 5, DARK);
+      ellipse(15, 31, 12, 4, MID);
+      ellipse(15, 31, 10, 3, WATER);
+      px(9, 30, 4, 1, WATER_L); px(18, 32, 3, 1, WATER_L);
+      // Column
+      px(12, 13, 6, 18, OUT);
+      px(13, 13, 4, 18, MID);
+      px(13, 13, 1, 18, LIGHT);
+      px(16, 13, 1, 18, DARK);
+      // Upper bowl
+      ellipse(15, 14, 9, 4, OUT);
+      ellipse(15, 13, 8, 3, DARK);
+      ellipse(15, 12, 7, 2, MID);
+      ellipse(15, 12, 5, 1, WATER);
+      // Finial / spout
+      px(13, 4, 4, 8, OUT);
+      px(14, 4, 2, 8, MID);
+      px(14, 4, 1, 8, LIGHT);
+      ellipse(15, 4, 3, 2, OUT);
+      ellipse(15, 4, 2, 1, LIGHT);
+      c.refresh();
+    }
+    if (!this.textures.exists('droplet')) {
+      const c = this.textures.createCanvas('droplet', 2, 2);
+      c.getContext().fillStyle = '#bfe8ff';
+      c.getContext().fillRect(0, 0, 2, 2);
+      c.refresh();
+    }
+
+    // Centre of the pool (pool spans x 21–26, y 10–13 in street coordinates).
+    const fx = 24 * TILE;
+    const fy = (12 + OY) * TILE + 4;
+    this.add.image(fx, fy, 'fountain').setOrigin(0.5, 0.8).setDepth(10 + fy / 1000);
+
+    // Water from the spout arcing down into the bowl and basin.
+    const top = fy - 30;
+    this.add.particles(fx, top, 'droplet', {
+      speed: { min: 14, max: 30 },
+      angle: { min: 200, max: 340 },
+      gravityY: 90,
+      lifespan: 650,
+      quantity: 2,
+      frequency: 60,
+      alpha: { start: 0.9, end: 0.2 },
+      scale: { start: 1, end: 0.5 },
+    }).setDepth(10 + fy / 1000 + 0.001);
+
+    // Expanding ripples on the pool around the base.
+    const ripples = this.add.graphics().setDepth(2.4);
+    const rings = [0, 0.33, 0.66];
+    this.events.on('update', (_t, dt) => {
+      ripples.clear();
+      for (let i = 0; i < rings.length; i++) {
+        rings[i] = (rings[i] + dt / 2400) % 1;
+        const r = rings[i];
+        ripples.lineStyle(1, 0xcdeeff, 0.45 * (1 - r));
+        ripples.strokeEllipse(fx, fy + 2, 30 + r * 50, 10 + r * 18);
+      }
+    });
   }
 
   // Chalk outline where the body was laid out, and muddy prints from the park.
