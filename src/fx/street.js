@@ -66,26 +66,38 @@ function makeTextures(scene) {
     c.refresh();
   }
 
-  // French police car, top-down, facing right: white body, blue stripe, light bar.
+  // French police car in the tileset's 3/4 view: the pack's red car (seen from behind),
+  // repainted white with a blue band, navy trim and a roof light bar.
   if (!tex.exists('policecar')) {
-    const c = tex.createCanvas('policecar', 32, 18);
+    const src = scene.textures.get('urban').getSourceImage();
+    const c = tex.createCanvas('policecar', 32, 32);
     const ctx = c.getContext();
+    [[447, 0, 0], [448, 16, 0], [474, 0, 16], [475, 16, 16]].forEach(([t, dx, dy]) => {
+      ctx.drawImage(src, (t % 27) * 16, Math.floor(t / 27) * 16, 16, 16, dx, dy, 16, 16);
+    });
+    const img = ctx.getImageData(0, 0, 32, 32);
+    const d = img.data;
+    const map = { dc615d: [232, 230, 239], c2504d: [201, 200, 214], a54240: [150, 150, 170], '742c34': [27, 35, 64] };
+    const hex = (o) => [d[o], d[o + 1], d[o + 2]].map((v) => v.toString(16).padStart(2, '0')).join('');
+    for (let y = 0; y < 32; y++) {
+      for (let x = 0; x < 32; x++) {
+        const o = (y * 32 + x) * 4;
+        if (!d[o + 3]) continue;
+        const h = hex(o);
+        let col = map[h];
+        // Blue band along the body (rows 20-21), red pinstripe below it.
+        if ((h === 'dc615d' || h === 'c2504d') && (y === 20 || y === 21)) col = [37, 70, 168];
+        if ((h === 'dc615d' || h === 'c2504d') && y === 22) col = [184, 40, 48];
+        if (col) [d[o], d[o + 1], d[o + 2]] = col;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    // Light bar on the roof.
     const px = (x, y, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(x, y, w, h); };
-    px(2, 2, 28, 14, '#1b1d28'); // outline
-    px(3, 3, 26, 12, '#e8e6ef'); // body
-    px(3, 13, 26, 2, '#b9b7c6'); // lower side shading
-    px(3, 8, 26, 2, '#2546a8'); // blue stripe
-    px(3, 10, 26, 1, '#c8323a'); // thin red line
-    px(19, 4, 6, 10, '#1b2333'); // windscreen
-    px(8, 4, 4, 10, '#1b2333'); // rear window
-    px(12, 4, 7, 10, '#f2f0f6'); // roof
-    px(14, 6, 3, 2, '#3a6cff'); // light bar (blue)
-    px(14, 10, 3, 2, '#3a6cff');
-    px(14, 8, 3, 2, '#d9d9e6');
-    px(29, 4, 1, 3, '#fff3c2'); px(29, 11, 1, 3, '#fff3c2'); // headlights
-    px(2, 4, 1, 3, '#b0282e'); px(2, 11, 1, 3, '#b0282e'); // tail lights
-    px(5, 1, 5, 2, '#11131b'); px(21, 1, 5, 2, '#11131b'); // wheels
-    px(5, 15, 5, 2, '#11131b'); px(21, 15, 5, 2, '#11131b');
+    px(13, 8, 8, 3, '#1b2340');
+    px(14, 9, 3, 1, '#3a6cff');
+    px(17, 9, 1, 1, '#d9d9e6');
+    px(18, 9, 2, 1, '#3a6cff');
     c.refresh();
   }
 }
@@ -143,14 +155,14 @@ export function buildWetStreets(scene, lights, puddles, OY) {
 export function buildPoliceCar(scene, x, y, OY) {
   makeTextures(scene);
   const cx = (x + 1) * TILE;
-  const cy = (y + OY) * TILE + 8;
-  scene.add.image(cx, cy, 'policecar').setDepth(10 + cy / 1000);
+  const bottom = (y + 1 + OY) * TILE;
+  scene.add.image(cx, bottom, 'policecar').setOrigin(0.5, 1).setDepth(10 + bottom / 1000);
 
-  const roof = { x: cx - 0.5, y: cy - 1 };
+  const roof = { x: cx + 1, y: bottom - 23 };
   const beam = scene.add.image(roof.x, roof.y, 'beam')
     .setOrigin(0, 0.5).setTint(0x3c6bff).setAlpha(0.22)
     .setBlendMode(Phaser.BlendModes.ADD).setDepth(2062);
-  const glow = scene.add.image(roof.x, roof.y, 'light')
+  const glow = scene.add.image(roof.x, roof.y + 8, 'light')
     .setScale(110 / 128).setTint(0x2f5cff).setAlpha(0)
     .setBlendMode(Phaser.BlendModes.ADD).setDepth(2061);
   const bulb = scene.add.image(roof.x, roof.y, 'light')
@@ -166,8 +178,8 @@ export function buildPoliceCar(scene, x, y, OY) {
     bulb.setAlpha(0.5 + 0.5 * pulse);
   });
 
-  // Solid body for collisions.
-  const body = scene.physics.add.staticImage(cx, cy + 2, undefined).setVisible(false);
-  body.body.setSize(28, 10);
+  // Solid body for collisions (the lower part of the car, where its wheels meet the ground).
+  const body = scene.physics.add.staticImage(cx, bottom - 6, undefined).setVisible(false);
+  body.body.setSize(30, 12);
   return body;
 }
