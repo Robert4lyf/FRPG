@@ -122,7 +122,7 @@ function makeTextures(scene) {
 // lights: from the town (pool centre x/y in px, kind, bulbs)
 export function buildWetStreets(scene, lights, puddles, OY) {
   makeTextures(scene);
-  const colour = { lamp: 0xffb020, window: 0xff9428, flood: 0xffdc8a };
+  const colour = { lamp: 0xffb020, window: 0xff9428, flood: 0xffdc8a, neon: 0x3cff7a };
 
   // Puddles on the paving (below people and props).
   puddles.forEach(([x, y, s = 1]) => {

@@ -3,6 +3,7 @@ import { castFrame } from '../world/costumes.js';
 import { CAST, CLUES, CHAPTER } from '../story/chapter1.js';
 import { NightLighting, gradeCamera } from '../fx/noir.js';
 import { buildWetStreets, buildPoliceCar } from '../fx/street.js';
+import { buildShopDressing } from '../fx/shops.js';
 import { FONT_TITLE } from '../ui/theme.js';
 
 const TILE = 16;
@@ -32,6 +33,7 @@ export default class WorldScene extends Phaser.Scene {
     this.buildMap();
     this.buildCrimeScene();
     this.buildFountain();
+    buildShopDressing(this, OY);
     this.buildCharacters();
     this.buildProps();
     this.buildClues();
