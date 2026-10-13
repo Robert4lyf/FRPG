@@ -130,7 +130,7 @@ export function buildWetStreets(scene, lights, puddles, OY) {
   });
 
   // Shimmering reflections of lamps and windows on the wet ground.
-  const reflections = lights.filter((l) => l.kind !== 'flood').map((l) => {
+  const reflections = lights.filter((l) => ['lamp', 'window', 'neon'].includes(l.kind)).map((l) => {
     const win = l.kind === 'window' && l.bulbs[0]?.w;
     const w = win ? l.bulbs[0].w : 10;
     const img = scene.add.image(l.x, l.y + (win ? -4 : 6), 'streak')

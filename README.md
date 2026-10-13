@@ -13,7 +13,7 @@ https://robert4lyf.github.io/FRPG/
 - **Talk / examine:** tap a person or a glinting clue, or press Space next to it.
 - **Questioning:** pick a question, or **Présenter une preuve** to confront someone with a clue or another witness's statement.
 - **Help with French:** tap any gold word for its meaning and pronunciation. Tap **EN** to see the English for a line. Tap the objective box for English too.
-- **Carnet (notebook):** clues, witness statements, and every vocabulary word you've met. Key: C.
+- **Carnet (notebook):** clues, witness statements, every vocabulary word you've met, and (from chapter 2) the timeline of the night, where statements that can't both be true show in red. Key: C.
 - **Le rapport:** each chapter ends with you typing up the case report, filling blanks from French options. Mistakes cost nothing but are saved as words to bring back in later chapters.
 
 ### Install on your phone (full-screen, no address bar)
@@ -29,7 +29,7 @@ Each chapter's grammar is what the investigation needs:
 |---|---|---|
 | Prologue (done) | The letter, the last evening with Hélène | Present, passé composé |
 | 1. Trop tard (done) | The scene, old friends and old grudges, the first lie, the post-mortem | Present, passé composé, a little imparfait |
-| 2. La nuit du crime | Rebuilding the night, breaking alibis | Imparfait vs passé composé |
+| 2. La nuit du crime (done) | Toussaint evening: rebuilding the night on a timeline, breaking alibis, the cemetery | Imparfait vs passé composé |
 | 3. Les secrets | Letters, the victim's diary, a second death | Plus-que-parfait, pronouns, *qui/que/dont* |
 | 4. La vérité | Hypotheses and the accusation | Conditionnel, subjonctif |
 
@@ -50,7 +50,9 @@ Chapter scripts live in `src/story/`. Each line is:
 ## Layout
 
 ```
-src/story/chapter1.js    script: cast, clues, statements, dialogue, objectives
+src/story/chapter1.js    prologue and chapter 1 script: cast, clues, statements, dialogue, objectives
+src/story/chapter2.js    chapter 2 script, statement times and contradictions
+src/story/story.js       merges the chapters and says which one is being played
 src/story/state.js       case progress (saved in the browser)
 src/scenes/WorldScene.js town, characters, clues, tap-to-walk pathfinding
 src/scenes/UIScene.js    dialogue, interrogation, evidence, Carnet, title cards

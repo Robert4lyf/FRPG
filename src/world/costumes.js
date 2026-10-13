@@ -49,6 +49,11 @@ export const COSTUMES = {
     base: 1,
     map: { c2504d: 'ece8df', a54240: 'c3bdb2', a09cca: '3e5a3e', '7a77a4': '2f452f' },
   },
+  // The mayor's wife: plum coat, gold scarf.
+  mmedelacroix: {
+    base: 5,
+    map: { ff7143: 'c9a64a', c77b47: '5a2a44', a9673b: '43203a', aaa8bd: '6a4a5e' },
+  },
   // Baker: cream apron over brown.
   roux: {
     base: 1,

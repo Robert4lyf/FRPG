@@ -1,7 +1,6 @@
 import {
-  CAST, CLUES, STATEMENTS, DIALOGUE, INTRO, OUTRO, OBJECTIVES, CHAPTER, REPORT,
-  PROLOGUE, PROLOGUE_DIALOGUE, NIGHT, MEMORIES,
-} from '../story/chapter1.js';
+  CAST, CLUES, STATEMENTS, CONFLICTS, INTRO, NIGHT, CHAPTERS, chapterOf, phaseOf, timeKey,
+} from '../story/story.js';
 import { speech } from '../learning/speech.js';
 import {
   C, FONT_TITLE, drawPanel, text, makeButton, RichText, plainText, glosses,
@@ -61,6 +60,11 @@ export default class UIScene extends Phaser.Scene {
   }
 
   // ---------- general ----------
+
+  // The chapter being played (prologue, ch1, ch2...).
+  ch() {
+    return chapterOf(phaseOf(this.state));
+  }
 
   lock(ms = 250) {
     this.registry.set('lockUntil', this.time.now + ms);
@@ -127,7 +131,8 @@ export default class UIScene extends Phaser.Scene {
   updateHud() {
     if (!this.objText) return;
     const g = this.state;
-    const obj = OBJECTIVES.find((o) => !o.done(g)) || OBJECTIVES[OBJECTIVES.length - 1];
+    const list = this.ch().objectives;
+    const obj = list.find((o) => !o.done(g)) || list[list.length - 1];
     const count = obj.count ? ` (${obj.count(g)})` : '';
     this.objText.setText((this.objEn ? obj.en : obj.fr) + count).setColor(this.objEn ? C.dim : C.ink);
     const h = this.objText.height + 38;
@@ -298,6 +303,9 @@ export default class UIScene extends Phaser.Scene {
     if (l.record && this.state.addStatement(l.record)) {
       this.sfx('right', 0.3);
       this.toast('TÉMOIGNAGE NOTÉ', `${CAST[STATEMENTS[l.record].who].name} : « ${STATEMENTS[l.record].fr} »`);
+      // Two statements that can't both be true: flag it.
+      CONFLICTS.filter((k) => (k.a === l.record || k.b === l.record) && this.state.has(k.a) && this.state.has(k.b) && !this.state.has(k.resolved))
+        .forEach((k) => this.toast('CONTRADICTION', k.fr));
     }
 
     this.hint.setVisible(false);
@@ -378,9 +386,10 @@ export default class UIScene extends Phaser.Scene {
   // ---------- interrogation and examination ----------
 
   async interrogate(id) {
-    const prologue = this.world.phase === 'prologue';
-    const d = prologue ? PROLOGUE_DIALOGUE[id] : DIALOGUE[id];
-    const metKey = prologue ? `met_${id}_p` : `met_${id}`;
+    const ch = this.ch();
+    const prologue = ch.id === 'prologue';
+    const d = ch.dialogue[id];
+    const metKey = ch.metKey(id);
     const g = this.state;
     this.openDialogue();
     if (!g.has(metKey)) {
@@ -399,17 +408,17 @@ export default class UIScene extends Phaser.Scene {
     for (;;) {
       const topics = d.topics.filter((t) => (t.requires || []).every((r) => g.has(r)));
       const options = topics.map((t) => {
-        const asked = g.wasAsked(id, t.id);
+        const asked = g.wasAsked(id, ch.askKey(t.id));
         return { label: `${asked ? '✓ ' : '› '}${t.q}`, en: `${asked ? '✓ ' : '› '}${t.en}`, dim: asked, value: { type: 'topic', t } };
       });
-      if (!prologue && g.evidence().length) options.push({ label: '◆ Présenter une preuve', en: '◆ Present evidence', value: { type: 'evidence' } });
+      if (ch.evidence && g.evidence().length) options.push({ label: '◆ Présenter une preuve', en: '◆ Present evidence', value: { type: 'evidence' } });
       options.push({ label: '✕ Partir', en: '✕ Leave', value: { type: 'leave' } });
 
       const pick = await this.menu(`${CAST[id].name.toUpperCase()} · ${CAST[id].role}`, options);
       if (pick.type === 'leave') break;
       if (pick.type === 'topic') {
         await this.playLines(pick.t.lines);
-        g.markAsked(id, pick.t.id);
+        g.markAsked(id, ch.askKey(pick.t.id));
         if (pick.t.end) {
           this.closeDialogue();
           await this.report();
@@ -419,7 +428,8 @@ export default class UIScene extends Phaser.Scene {
       } else {
         const ev = await this.pickEvidence(id);
         if (!ev) continue;
-        const reaction = d.evidence?.[ev];
+        let reaction = d.evidence?.[ev];
+        if (typeof reaction === 'string') reaction = d.shared?.[reaction];
         if (!reaction) this.sfx('wrong', 0.25);
         await this.playLines(reaction || d.wrong);
       }
@@ -430,7 +440,7 @@ export default class UIScene extends Phaser.Scene {
   // A place that brings back a memory.
   async recall(id) {
     this.openDialogue();
-    await this.playLines(MEMORIES[id].lines);
+    await this.playLines(this.ch().memories[id].lines);
     this.closeDialogue();
   }
 
@@ -560,8 +570,9 @@ export default class UIScene extends Phaser.Scene {
     this.overlayKind = 'carnet';
     const { W, H } = this;
     const g = this.state;
-    const tabs = [['indices', `Indices (${g.clues.length})`], ['temoins', `Témoignages (${g.statements.length})`], ['mots', `Mots (${Object.keys(g.words).length})`]];
-    const tabW = Math.min(190, (W - PAD * 2 - 20) / 3);
+    const tabs = [['indices', `Indices (${g.clues.length})`], ['temoins', `Témoins (${g.statements.length})`], ['mots', `Mots (${Object.keys(g.words).length})`]];
+    if (g.has('timeline_open')) tabs.splice(2, 0, ['chrono', 'Chrono']);
+    const tabW = Math.min(190, (W - PAD * 2 - 10 * (tabs.length - 1)) / tabs.length);
     tabs.forEach(([id, label], i) => {
       const b = makeButton(this, PAD + i * (tabW + 10), 76, tabW, 40, label, () => this.renderCarnet(id), { size: 15 });
       if (id !== tab) b.setDim(true);
@@ -600,6 +611,9 @@ export default class UIScene extends Phaser.Scene {
         [`« ${STATEMENTS[id].fr} »`, 16, C.ink],
         [STATEMENTS[id].en, 14, C.dim, { fontStyle: 'italic' }],
       ]));
+    } else if (tab === 'chrono') {
+      items = this.timelineItems(block);
+      cols = 1;
     } else {
       cols = this.portrait ? 2 : 3;
       items = Object.entries(g.words).map(([fr, en]) => (w) => {
@@ -615,6 +629,33 @@ export default class UIScene extends Phaser.Scene {
     } else {
       this.carnetKeys = this.pagedList(c, items, { top: 132, bottom: H - 76, cols });
     }
+  }
+
+  // Everything with a time, in order, from that afternoon to midnight. Lines in conflict are red.
+  timelineItems(block) {
+    const g = this.state;
+    const known = CONFLICTS.filter((k) => g.has(k.a) && g.has(k.b));
+    const open = known.filter((k) => !g.has(k.resolved));
+    const clash = new Set(open.flatMap((k) => [k.a, k.b]));
+    const entries = [
+      ...g.statements.filter((id) => STATEMENTS[id].t).map((id) => ({
+        id, t: STATEMENTS[id].t, who: CAST[STATEMENTS[id].who].name, fr: `« ${STATEMENTS[id].fr} »`, en: STATEMENTS[id].en,
+      })),
+      ...g.clues.filter((id) => CLUES[id].t).map((id) => ({ id, t: CLUES[id].t, who: `▣ ${CLUES[id].name}`, fr: CLUES[id].note.fr, en: CLUES[id].note.en })),
+    ].sort((a, b) => timeKey(a.t) - timeKey(b.t));
+    const fmt = (t) => t.replace(':', ' h ');
+    const items = entries.map((e) => block([
+      [`${clash.has(e.id) ? '⚠ ' : ''}${fmt(e.t)} — ${e.who}`, 16, clash.has(e.id) ? '#e0645a' : C.gold, { fontFamily: FONT_TITLE }],
+      [e.fr, 15, C.ink],
+      [e.en, 13, C.dim, { fontStyle: 'italic' }],
+    ]));
+    // Open contradictions first, then the ones already explained.
+    [...open, ...known.filter((k) => !open.includes(k))].forEach((k) => items.push(block([
+      [open.includes(k) ? 'CONTRADICTION' : '✓ EXPLIQUÉ', 15, open.includes(k) ? '#e0645a' : C.dim, { fontFamily: FONT_TITLE }],
+      [k.fr, 15, open.includes(k) ? C.ink : C.dim],
+      [k.en, 13, C.dim, { fontStyle: 'italic' }],
+    ])));
+    return items;
   }
 
   closeCarnet() {
@@ -671,7 +712,7 @@ export default class UIScene extends Phaser.Scene {
 
   async begin() {
     if (!this.state.has('intro_seen')) {
-      await this.card(INTRO, PROLOGUE.title.toUpperCase(), PROLOGUE.titleEn);
+      await this.card(INTRO, CHAPTERS.prologue.title.toUpperCase(), CHAPTERS.prologue.titleEn);
       this.state.set('intro_seen');
     }
     // Resume if the game was closed after the prologue but before the night card finished.
@@ -680,18 +721,19 @@ export default class UIScene extends Phaser.Scene {
       return;
     }
     // Resume if the game was closed between the reveal and the end of the report.
-    if (this.state.has('chapter1_done') && !this.state.has('report_done')) {
-      await this.report();
-    }
-    if (this.state.has('report_done') && !this.state.has('outro_seen')) {
-      await this.outro();
+    const ch = this.ch();
+    if (ch.flags) {
+      if (this.state.has(ch.flags.done) && !this.state.has(ch.flags.report)) await this.report();
+      if (this.state.has(ch.flags.report) && !this.state.has(ch.flags.outro)) { await this.outro(); return; }
+      // Closed after a chapter ended but before the next one began.
+      if (this.state.has(ch.flags.outro) && ch.next) { await this.startChapter(ch.next); return; }
     }
     this.world.busy = false;
   }
 
   // The night of the murder, then the morning: rebuild the town for chapter 1.
   async night() {
-    await this.card(NIGHT, CHAPTER.title.toUpperCase(), CHAPTER.titleEn);
+    await this.card(NIGHT, CHAPTERS.ch1.title.toUpperCase(), CHAPTERS.ch1.titleEn);
     this.state.set('night_seen');
     this.scene.get('World').scene.restart();
     this.scene.restart();
@@ -699,17 +741,18 @@ export default class UIScene extends Phaser.Scene {
 
   // Dubois asks for the report; the player types it up; Dubois gives a verdict.
   async report() {
+    const { report, flags } = this.ch();
     this.world.busy = true;
     this.cardOpen = true;
     this.openDialogue();
-    await this.playLines(REPORT.intro);
+    await this.playLines(report.intro);
     this.closeDialogue();
     this.carnetBtn.c.setVisible(false);
     this.soundBtn.c.setVisible(false);
-    const mistakes = await runReport(this);
-    this.state.set('report_done');
+    const mistakes = await runReport(this, report);
+    this.state.set(flags.report);
     this.openDialogue();
-    const v = REPORT.verdict.find((x) => mistakes <= x.max);
+    const v = report.verdict.find((x) => mistakes <= x.max);
     await this.playLines([v.line]);
     this.closeDialogue();
     this.cardOpen = false;
@@ -717,9 +760,21 @@ export default class UIScene extends Phaser.Scene {
   }
 
   async outro() {
-    await this.card(OUTRO, 'FIN DU CHAPITRE 1', 'Chapitre 2 — La nuit du crime · bientôt\nChapter 2 — The Night of the Crime · coming soon');
-    this.state.set('outro_seen');
+    const ch = this.ch();
+    await this.card(ch.outro, ch.outroTitle, ch.outroSub);
+    this.state.set(ch.flags.outro);
     this.updateHud();
+    if (ch.next) await this.startChapter(ch.next);
+    else this.world.busy = false;
+  }
+
+  // Title card for the next chapter, then rebuild the town for it.
+  async startChapter(id) {
+    const next = CHAPTERS[id];
+    await this.card(next.intro, next.title.toUpperCase(), next.titleEn);
+    this.state.set(next.flags.start);
+    this.scene.get('World').scene.restart();
+    this.scene.restart();
   }
 
   // ---------- keyboard ----------

@@ -1,4 +1,4 @@
-import { REPORT } from '../story/chapter1.js';
+
 import { FONT_TITLE, FONT_BODY, makeButton } from './theme.js';
 
 // The end-of-chapter case report, typed onto a sheet of paper one line at a time.
@@ -9,7 +9,7 @@ const FAINT = '#8a8070';
 const RED = '#a3262c';
 const PAPER = 0xebe4d2;
 
-export async function runReport(ui) {
+export async function runReport(ui, REPORT) {
   const { W, H } = ui;
   const portrait = H > W;
   const scene = ui;

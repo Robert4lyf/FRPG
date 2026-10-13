@@ -89,8 +89,10 @@ export class NightLighting {
     this.rt = scene.add.renderTexture(0, 0, vw, vh).setOrigin(0).setDepth(2050);
     this.vw = vw;
     this.vh = vh;
-    const strength = { lamp: 1, window: 0.9, flood: 1, neon: 0.7 };
-    this.lights = lights.map((l, i) => ({ ...l, strength: strength[l.kind] ?? 0.8, flicker: l.kind === 'neon' || (l.kind === 'lamp' && i % 4 === 1) }));
+    const strength = { lamp: 1, window: 0.9, flood: 1, neon: 0.7, lantern: 0.75, candle: 0.7 };
+    this.lights = lights.map((l, i) => ({
+      ...l, strength: strength[l.kind] ?? 0.8, flicker: l.kind === 'neon' || (l.kind === 'lamp' && i % 4 === 1), candle: l.kind === 'candle',
+    }));
     this.movers = [];
     this.t = 0;
 
@@ -98,7 +100,7 @@ export class NightLighting {
     // Sodium-yellow street lamps, amber windows, a paler floodlight.
     // Each light = a multiply tint (turns the lit ground yellow without bleaching it)
     // plus a faint additive bloom.
-    const colour = { lamp: 0xffb020, window: 0xff9428, flood: 0xffdc8a, neon: 0x3cff7a };
+    const colour = { lamp: 0xffb020, window: 0xff9428, flood: 0xffdc8a, neon: 0x3cff7a, lantern: 0xff6a2a, candle: 0xffa040 };
     this.glows = this.lights.map((l) => {
       const tint = scene.add.image(l.x, l.y, 'light')
         .setScale((l.radius * 2) / 128).setTint(colour[l.kind]).setAlpha(1)
@@ -147,6 +149,10 @@ export class NightLighting {
         // Occasional stutter, like a failing bulb.
         const n = Math.sin(this.t * 0.013 + i) + Math.sin(this.t * 0.031 + i * 3);
         a = n > 1.6 ? 0.25 : 1;
+        this.glows[i].setAlpha(a);
+      } else if (l.candle) {
+        // Candles waver gently rather than stutter.
+        a = 0.8 + 0.2 * Math.sin(this.t * 0.011 + i * 1.7) * Math.sin(this.t * 0.007 + i);
         this.glows[i].setAlpha(a);
       }
       if (visible(l.x, l.y, l.radius)) {

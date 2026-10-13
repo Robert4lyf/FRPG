@@ -97,6 +97,10 @@ CAST = {
         ('feet/shoes/basic/thin', '#0e0e12', '#3a3a44'), ('legs/pants/thin', '#0e0e12', '#34323a'),
         ('torso/clothes/blouse_longsleeve/female', '#0e0e12', '#3a3842'),
         ('hair/bob/adult', '#0a0a0e', '#3a3644')]),
+    'mmedelacroix': dict(sex='female', skin='fair', head='female_elderly', layers=[
+        ('feet/shoes/basic/thin', '#141216', '#4a4440'), ('legs/pants/thin', '#241420', '#5a3a50'),
+        ('torso/clothes/blouse_longsleeve/female', '#3a1830', '#8a4a74'),
+        ('hair/bob/adult', '#5a5a64', '#c8c8d2')]),
     'roux': dict(sex='female', skin='fair', head='female_elderly', layers=[
         ('feet/shoes/basic/thin', '#1a1210', '#4a3a2c'), ('legs/pants/thin', '#2a1c14', '#6a4a34'),
         ('torso/clothes/blouse_longsleeve/female', '#3a2216', '#9a6440'),

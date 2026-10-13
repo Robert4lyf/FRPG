@@ -1,4 +1,4 @@
-import { CLUES, STATEMENTS } from './chapter1.js';
+import { CLUES, STATEMENTS } from './story.js';
 
 // Case progress: flags, clues found, statements recorded, words met, topics asked.
 // Saved to the browser after every change.

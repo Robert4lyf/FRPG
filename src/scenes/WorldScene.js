@@ -1,7 +1,7 @@
 import { buildTown, MAP_W, MAP_H, OY, SIGNS } from '../world/town.js';
 import { castFrame } from '../world/costumes.js';
 import { SPRITES, bodyBox } from '../world/sprites.js';
-import { CAST, CLUES, CHAPTER, PROLOGUE, MEMORIES } from '../story/chapter1.js';
+import { CAST, CLUES, chapterOf, phaseOf } from '../story/story.js';
 import { NightLighting, gradeCamera } from '../fx/noir.js';
 import { buildWetStreets, buildPoliceCar } from '../fx/street.js';
 import { buildShopDressing } from '../fx/shops.js';
@@ -30,14 +30,19 @@ export default class WorldScene extends Phaser.Scene {
     this.path = null;
     this.pending = null;
     this.state = this.registry.get('state');
-    // The prologue is the evening before the murder; chapter 1 is the morning after.
-    this.phase = this.state.has('prologue_done') ? 'ch1' : 'prologue';
-    this.crime = this.phase === 'ch1';
+    // Prologue: the evening before the murder. Chapter 1: the morning after. Chapter 2: the
+    // Toussaint evening, two days on.
+    this.phase = phaseOf(this.state);
+    this.chapter = chapterOf(this.phase);
+    this.crime = !!this.chapter.crimeScene;
+    this.festival = !!this.chapter.festival;
 
     this.buildMap();
     if (this.crime) this.buildCrimeScene();
     this.buildFountain();
-    buildShopDressing(this, OY, { crime: this.crime });
+    buildShopDressing(this, OY, { crime: this.phase !== 'prologue' });
+    this.buildCemetery();
+    if (this.festival) this.buildFestival();
     this.buildCharacters();
     this.buildProps();
     this.buildClues();
@@ -61,7 +66,7 @@ export default class WorldScene extends Phaser.Scene {
   // ---------- setup ----------
 
   buildMap() {
-    this.town = buildTown({ crime: this.crime });
+    this.town = buildTown({ crime: this.crime, festival: this.festival });
     const map = this.make.tilemap({ tileWidth: TILE, tileHeight: TILE, width: MAP_W, height: MAP_H });
     const tiles = map.addTilesetImage('urban', 'urban', TILE, TILE, 0, 0);
     this.layers = {};
@@ -166,6 +171,88 @@ export default class WorldScene extends Phaser.Scene {
     });
   }
 
+  // Headstones drawn in the stone palette of the fountain; each blocks its tile.
+  buildCemetery() {
+    const STONE = { out: '#3b3850', dark: '#6c6884', mid: '#9692ad', light: '#bdb9d0' };
+    const make = (key, w, h, draw) => {
+      if (this.textures.exists(key)) return;
+      const c = this.textures.createCanvas(key, w, h);
+      const ctx = c.getContext();
+      draw((x, y, ww, hh, col) => { ctx.fillStyle = col; ctx.fillRect(x, y, ww, hh); });
+      c.refresh();
+    };
+    // 0: rounded headstone, 1: cross, 2: low slab, 3: the Marchand grave (headstone + flowers).
+    const headstone = (px, ox = 0) => {
+      px(ox + 2, 3, 10, 12, STONE.out); px(ox + 3, 1, 8, 2, STONE.out); px(ox + 4, 0, 6, 1, STONE.out);
+      px(ox + 3, 3, 8, 11, STONE.mid); px(ox + 4, 1, 6, 2, STONE.mid); px(ox + 3, 3, 2, 11, STONE.light);
+      px(ox + 9, 3, 2, 11, STONE.dark); px(ox + 5, 5, 4, 1, STONE.dark); px(ox + 5, 7, 4, 1, STONE.dark);
+      px(ox + 1, 14, 12, 2, STONE.out);
+    };
+    make('grave0', 14, 16, (px) => headstone(px));
+    make('grave1', 14, 16, (px) => {
+      px(5, 0, 4, 15, STONE.out); px(1, 3, 12, 4, STONE.out);
+      px(6, 1, 2, 13, STONE.mid); px(2, 4, 10, 2, STONE.mid); px(6, 1, 1, 13, STONE.light);
+      px(3, 14, 8, 2, STONE.out);
+    });
+    make('grave2', 14, 16, (px) => {
+      px(1, 8, 12, 8, STONE.out); px(2, 9, 10, 6, STONE.mid); px(2, 9, 10, 1, STONE.light); px(3, 6, 8, 2, STONE.out); px(4, 7, 6, 1, STONE.dark);
+    });
+    make('grave3', 16, 18, (px) => {
+      headstone(px, 1);
+      // White chrysanthemums at the foot.
+      [[2, 14], [5, 15], [9, 14], [12, 15]].forEach(([x, y]) => { px(x, y, 3, 3, '#e8e4dc'); px(x + 1, y + 1, 1, 1, '#c9a64a'); });
+      px(3, 16, 10, 1, '#3e5a3e');
+    });
+    make('candle', 3, 5, (px) => { px(1, 0, 1, 1, '#fff2b0'); px(0, 1, 3, 4, '#e9e3d5'); px(0, 4, 3, 1, '#8a2a2a'); });
+
+    this.graveBodies = this.physics.add.staticGroup();
+    this.town.graves.forEach((g) => {
+      const x = g.x * TILE + 8;
+      const y = (g.y + OY) * TILE + 15;
+      this.add.image(x, y, `grave${g.style}`).setOrigin(0.5, 1).setDepth(10 + y / 1000);
+      if (g.candle) this.add.image(x + 5, y + 1, 'candle').setOrigin(0.5, 1).setDepth(10 + (y + 1) / 1000);
+      this.graveBodies.create(x, y - 4, undefined).setVisible(false).body.setSize(12, 8);
+    });
+  }
+
+  // Toussaint evening: paper lanterns on strings across the street, candles and flowers at the fountain.
+  buildFestival() {
+    if (!this.textures.exists('lantern')) {
+      const c = this.textures.createCanvas('lantern', 5, 7);
+      const ctx = c.getContext();
+      const px = (x, y, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(x, y, w, h); };
+      px(2, 0, 1, 1, '#2b2838'); px(1, 1, 3, 1, '#2b2838');
+      px(0, 2, 5, 4, '#c8402a'); px(1, 2, 3, 4, '#ff8a4a'); px(2, 3, 1, 2, '#ffd08a');
+      px(1, 6, 3, 1, '#2b2838');
+      c.refresh();
+    }
+    const g = this.add.graphics().setDepth(2001);
+    g.lineStyle(0.5, 0x1a1824, 0.9);
+    this.town.strings.forEach(({ x0, x1, y }) => {
+      const pts = [];
+      for (let i = 0; i <= 16; i++) {
+        const t = i / 16;
+        pts.push(new Phaser.Math.Vector2((x0 + (x1 - x0) * t) * TILE, (y + OY + Math.sin(t * Math.PI) * 0.55) * TILE));
+      }
+      g.strokePoints(pts);
+    });
+    this.town.lanterns.forEach(({ x, y }, i) => {
+      const l = this.add.image(x * TILE, (y + OY) * TILE, 'lantern').setOrigin(0.5, 0).setDepth(2002);
+      this.tweens.add({ targets: l, angle: { from: -6, to: 6 }, yoyo: true, repeat: -1, duration: 1300 + i * 70, ease: 'Sine.InOut' });
+    });
+    // The memorial: candles in a row on the fountain's edge, with bunches of flowers between.
+    const m = this.add.graphics().setDepth(2.7);
+    [[22, 14.55], [23.4, 14.6], [24.9, 14.5], [26.1, 14.6]].forEach(([x, y]) => {
+      const px = x * TILE;
+      const py = (y + OY) * TILE;
+      m.fillStyle(0x3e5a3e, 1).fillRect(px - 3, py + 2, 6, 1);
+      [[-3, 0], [0, -1], [3, 0], [-1, 1], [2, 1]].forEach(([dx, dy]) => {
+        m.fillStyle(0xe8e4dc, 1).fillRect(px + dx - 1, py + dy - 1, 2, 2);
+      });
+    });
+    this.town.candles.forEach(({ x, y }) => this.add.image(x * TILE, (y + OY) * TILE + 4, 'candle').setOrigin(0.5, 1).setDepth(2.8));
+  }
+
   // Props that aren't in the tileset (drawn here) and block movement.
   buildProps() {
     if (!this.textures.exists('floodlight')) {
@@ -199,6 +286,7 @@ export default class WorldScene extends Phaser.Scene {
       body.body.setSize(12, 8);
     });
     this.physics.add.collider(this.player, this.solidProps);
+    this.physics.add.collider(this.player, this.graveBodies);
   }
 
   // Chalk outline where the body was laid out, and muddy prints from the park.
@@ -227,7 +315,7 @@ export default class WorldScene extends Phaser.Scene {
   }
 
   buildCharacters() {
-    const start = this.crime ? CHAPTER.playerStart : PROLOGUE.playerStart;
+    const start = this.chapter.playerStart;
     this.player = this.physics.add.sprite(centre(start.x), centre(start.y + OY), 'cast', castFrame(PLAYER_COSTUME, 'up', 0));
     this.player.setOrigin(0.5, SPRITES.originY);
     { const [w, h, ox, oy] = bodyBox(10, 6); this.player.body.setSize(w, h).setOffset(ox, oy); }
@@ -236,8 +324,9 @@ export default class WorldScene extends Phaser.Scene {
     this.player.dir = 'up';
     SOLID_LAYERS.forEach((n) => this.physics.add.collider(this.player, this.layers[n]));
 
-    const here = ([id, c]) => c.phases.includes(this.phase) && !(id === 'helene' && this.state.has('met_helene'));
-    this.people = Object.entries(CAST).filter(here).map(([id, c]) => {
+    const here = ([id, c]) => c.at[this.phase] && !(id === 'helene' && this.state.has('met_helene'));
+    this.people = Object.entries(CAST).filter(here).map(([id, info]) => {
+      const c = { ...info, ...info.at[this.phase] };
       const s = this.physics.add.sprite(centre(c.x), centre(c.y + OY), 'cast', castFrame(id, 'down', 0));
       s.setOrigin(0.5, SPRITES.originY);
       const [w, h, ox, oy] = bodyBox(12, 8);
@@ -258,7 +347,7 @@ export default class WorldScene extends Phaser.Scene {
   }
 
   buildClues() {
-    this.clueSprites = !this.crime ? [] : Object.entries(CLUES).map(([id, c]) => {
+    this.clueSprites = Object.entries(CLUES).filter(([, c]) => c.phase === this.phase).map(([id, c]) => {
       const s = this.add.image(centre(c.x), centre(c.y + OY) + 2, 'glint').setDepth(2070);
       Object.assign(s, { kind: 'clue', id, info: c, tx: c.x, ty: c.y + OY });
       s.marker = this.add.image(s.x, s.y + 2, 'marker').setDepth(2.6).setVisible(false);
@@ -271,14 +360,15 @@ export default class WorldScene extends Phaser.Scene {
   refreshClues() {
     this.clueSprites.forEach((s) => {
       const found = this.state.clues.includes(s.id);
-      s.setVisible(!found);
+      const open = (s.info.requires || []).every((r) => this.state.has(r));
+      s.setVisible(!found && open);
       s.marker.setVisible(found);
     });
   }
 
-  // Memory spots: a pale blue shimmer where a place brings back the past (chapter 1 only).
+  // Memory spots: a pale blue shimmer where a place brings back the past.
   buildMemories() {
-    this.memorySprites = !this.crime ? [] : Object.entries(MEMORIES)
+    this.memorySprites = Object.entries(this.chapter.memories)
       .filter(([id]) => !this.state.has(`mem_${id}`))
       .map(([id, m]) => {
         const s = this.add.image(centre(m.x), centre(m.y + OY) + 2, 'glint').setDepth(2070).setTint(0x9fc4ff);
@@ -510,6 +600,7 @@ export default class WorldScene extends Phaser.Scene {
       this.refreshClues();
     }
 
+    this.refreshClues(); // a conversation can unlock clues (Claire's keys)
     this.tweens.add({
       targets: cam.followOffset, y: 0, duration: 300,
       onComplete: () => cam.setBounds(0, 0, MAP_W * TILE, MAP_H * TILE),

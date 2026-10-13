@@ -12,7 +12,7 @@ import { SHOP_BLOCKS } from '../fx/shops.js';
 //   overhead : drawn above the player (tree tops, lamp heads)
 // Layout coordinates below are 'street' coordinates. The map has OY extra rows of
 // rooftops along the top so the camera can show the north street fully during dialogue.
-export const MAP_W = 48;
+export const MAP_W = 60; // 0–47 the town, 48–59 the cemetery (east of the park)
 export const OY = 4;
 export const MAP_H = 36 + OY;
 
@@ -26,10 +26,12 @@ export const SIGNS = [
   { x: 6, y: 10.4, text: 'MARCHÉ' },
   { x: 39, y: 9, text: 'PARC' },
   { x: 21.5, y: 24.4, text: 'ARRÊT DE BUS' },
+  { x: 50, y: 9.4, text: 'CIMETIÈRE' },
 ];
 
-// crime: false for the prologue (the evening before the murder): no police, tape or floodlight.
-export function buildTown({ crime = true } = {}) {
+// crime: chapter 1 only (police, barriers, floodlight). festival: chapter 2, the Toussaint
+// evening (lanterns over the north street, candles at the fountain and in the cemetery).
+export function buildTown({ crime = true, festival = false } = {}) {
   const layer = () => new Array(MAP_W * MAP_H).fill(-1);
   const L = { ground: layer(), grass: layer(), water: layer(), building: layer(), facade: layer(), object: layer(), overhead: layer() };
   const inBounds = (x, y) => x >= 0 && y >= 0 && x < MAP_W && y < MAP_H;
@@ -93,7 +95,7 @@ export function buildTown({ crime = true } = {}) {
   fill('ground', 0, -OY, MAP_W, MAP_H, T.paving);
 
   // Rear rooftops behind the north street
-  [[0, 12, T.roofGrey9], [12, 14, T.roofTan9], [26, 12, T.roofGrey9], [38, 10, T.roofTan9]]
+  [[0, 12, T.roofGrey9], [12, 14, T.roofTan9], [26, 12, T.roofGrey9], [38, 10, T.roofTan9], [48, 12, T.roofGrey9]]
     .forEach(([x, w, roof]) => nine('building', x, -OY, w, OY, roof));
 
   // North street: boulangerie, café, mairie, école, pharmacie
@@ -106,6 +108,8 @@ export function buildTown({ crime = true } = {}) {
   });
   building({ x: 32, y: 0, w: 8, brick: T.brickOrange, parts: [{ x: 1, y: 0, t: T.window }, { x: 2, y: 0, t: T.window }, { x: 5, y: 0, t: T.window }, { x: 6, y: 0, t: T.window }, { x: 3, y: 1, t: T.doubleDoor }, { x: 1, y: 1, t: T.window }, { x: 6, y: 1, t: T.window }] });
   building({ x: 41, y: 0, w: 6, roof: T.roofGrey9, brick: T.brickRed, parts: [...shopfront(0), { x: 4, y: 1, t: T.glassDoor }, { x: 4, y: 0, t: T.window }] });
+  // Houses facing the cemetery
+  building({ x: 48, y: 0, w: 12, roof: T.roofTan9, brick: T.brickOrange, parts: [1, 2, 5, 9, 10].map((dx) => ({ x: dx, y: 0, t: T.window })).concat([{ x: 3, y: 1, t: T.door }, { x: 8, y: 1, t: T.door }]) });
 
   // Lit windows: the café and the bakery are open before dawn; a lamp burns in the mairie.
   light(3.5, 6.5, 46, 'window', [{ x: 2 + 3 / 16, y: 4 + 3 / 16, w: 3 - 6 / 16, h: 1.6 }]);
@@ -140,6 +144,55 @@ export function buildTown({ crime = true } = {}) {
     props.push({ kind: 'floodlight', x: 20, y: 15 });
     props.push({ kind: 'policecar', x: 15, y: 17 }, { kind: 'block', x: 16, y: 17 });
     light(23, 14.7, 58, 'flood', [{ x: 20.5 + 5 / 16, y: 15 - 6 / 16, r: 6 }]);
+  }
+
+  // Festival: paper lanterns strung between the lamps over the north pavement.
+  const lanterns = [];
+  const strings = [];
+  if (festival) {
+    [[9, 18], [18, 31], [31, 40]].forEach(([a, b]) => {
+      strings.push({ x0: a + 0.5, x1: b + 0.5, y: 6.25 });
+      for (let x = a + 1.6; x < b - 0.4; x += 2.1) {
+        const t = (x - a) / (b - a);
+        const y = 6.25 + Math.sin(t * Math.PI) * 0.55; // the string sags between poles
+        lanterns.push({ x, y });
+        light(x, y + 0.9, 26, 'lantern', [{ x, y: y + 0.35, r: 3 }]);
+      }
+    });
+  }
+  // Candles and flowers for Hélène along the edge of the fountain.
+  const candles = [];
+  if (festival) {
+    [21.4, 22.6, 24.2, 25.5, 26.6].forEach((x, i) => {
+      candles.push({ x, y: 14.15 + (i % 2) * 0.2 });
+      light(x, 14.5, 16, 'candle', [{ x, y: 14.05 + (i % 2) * 0.2, r: 2 }]);
+    });
+  }
+
+  // Cemetery (east of the park): a low wall, cypresses, rows of graves, a gate on the west.
+  nine('grass', 49, 9, 10, 16, T.grass9);
+  for (let x = 49; x <= 58; x++) {
+    const t = x === 49 ? T.fenceRow[0] : x === 58 ? T.fenceRow[2] : T.fenceRow[1];
+    set('object', x, 9, t); set('object', x, 24, t);
+  }
+  for (let y = 10; y <= 23; y++) if (y !== 16 && y !== 17) set('object', 49, y, T.bush);
+  for (let y = 10; y <= 23; y++) {
+    if ((y - 11) % 3 === 0) tree(58, y + 1);
+    else if (get('object', 58, y) === -1) set('object', 58, y, T.bush);
+  }
+  for (let x = 49; x <= 57; x++) [16, 17].forEach((y) => set('grass', x, y, -1)); // gravel path
+  const graves = [];
+  [[51, 12], [53, 12], [55, 12], [51, 14], [56, 14], [51, 19], [53, 19], [55, 19], [52, 22], [54, 22], [56, 22]]
+    .forEach(([x, y], i) => graves.push({ x, y, style: i % 3 }));
+  graves.push({ x: 54, y: 15, style: 3, marchand: true }); // Pierre Marchand
+  graves.forEach((g) => props.push({ kind: 'grave', x: g.x, y: g.y }));
+  lamp(47, 13); lamp(47, 21);
+  if (festival) {
+    // Toussaint: a candle on several graves.
+    graves.filter((g, i) => g.marchand || i % 2 === 0).forEach((g) => {
+      g.candle = true;
+      light(g.x + 0.75, g.y + 0.9, 20, 'candle', [{ x: g.x + 0.75, y: g.y + 0.55, r: 2 }]);
+    });
   }
 
   // Park (east) with pond, trees and benches
@@ -178,6 +231,7 @@ export function buildTown({ crime = true } = {}) {
   building({ x: 0, y: 31, w: 11, roofH: 5, roof: T.roofGrey9, brick: [] });
   building({ x: 14, y: 31, w: 18, roofH: 5, roof: T.roofTan9, brick: [] });
   building({ x: 35, y: 31, w: 13, roofH: 5, roof: T.roofGrey9, brick: [] });
+  building({ x: 50, y: 31, w: 10, roofH: 5, roof: T.roofTan9, brick: [] });
 
   // Physical coords (as used by the tilemap and pathfinding).
   const isSolid = (x, y) => !inBounds(x, y)
@@ -190,7 +244,8 @@ export function buildTown({ crime = true } = {}) {
   const puddles = [
     [22, 18, 1], [27.5, 16, 0.8], [14, 9, 1.1], [10.5, 7.6, 0.8], [33.5, 8.2, 0.9],
     [18.5, 21, 0.9], [29, 23.5, 1], [6, 28.6, 1.2], [26, 29.3, 1], [41, 28.4, 0.9], [44.5, 7.8, 0.8],
+    [52, 17.2, 0.8], [52, 28.5, 1],
   ];
 
-  return { layers: L, isSolid, lights, props, puddles };
+  return { layers: L, isSolid, lights, props, puddles, graves, candles, lanterns, strings };
 }
