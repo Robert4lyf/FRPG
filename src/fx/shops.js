@@ -103,6 +103,41 @@ function makeTextures(scene) {
     px(1, 12, 1, 4, '#6b4423'); px(10, 12, 1, 4, '#6b4423');
   });
 
+  // "FERMÉ" card hanging in the window: cream card, red border, pixel lettering.
+  canvas(scene, 'ferme', 25, 13, (ctx, px) => {
+    px(7, 0, 1, 3, '#cfc9be'); px(17, 0, 1, 3, '#cfc9be'); // strings
+    px(0, 3, 25, 10, '#9e2a2f'); px(1, 4, 23, 8, '#efe8d6');
+    const glyph = {
+      F: ['111', '100', '110', '100', '100'],
+      E: ['111', '100', '110', '100', '111'],
+      R: ['110', '101', '110', '101', '101'],
+      M: ['101', '111', '101', '101', '101'],
+    };
+    let x = 3;
+    ['F', 'E', 'R', 'M', 'E'].forEach((ch, i) => {
+      glyph[ch].forEach((row, y) => [...row].forEach((bit, k) => { if (bit === '1') px(x + k, 6 + y, 1, 1, '#1d1b1a'); }));
+      if (i === 4) px(x + 1, 4, 1, 1, '#1d1b1a'); // accent on É
+      x += 4;
+    });
+  });
+
+  // Police tape crossed over a door: red and white stripes, sagging slightly.
+  canvas(scene, 'tape', 22, 21, (ctx, px) => {
+    const strip = (x0, y0, x1, y1) => {
+      const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+      for (let i = 0; i <= n; i++) {
+        const t = i / n;
+        const sag = Math.sin(t * Math.PI) * 1.5;
+        const x = Math.round(x0 + (x1 - x0) * t);
+        const y = Math.round(y0 + (y1 - y0) * t + sag);
+        const col = Math.floor(i / 3) % 2 ? '#f2efe8' : '#c7303a';
+        px(x, y, 1, 3, col);
+      }
+    };
+    strip(0, 2, 21, 15);
+    strip(0, 15, 21, 3);
+  });
+
   // Pharmacy cross on a wall bracket.
   canvas(scene, 'pharmacross', 12, 12, (ctx, px) => {
     px(4, 0, 4, 12, '#1d3a24'); px(0, 4, 12, 4, '#1d3a24');
@@ -135,6 +170,11 @@ export function buildShopDressing(scene, OY) {
   // Pharmacie: green cross on the wall beside the door.
   const [cx, cy] = at(44, 4);
   const cross = scene.add.image(cx + 8, cy + 7, 'pharmacross').setDepth(4.6);
+  // Closed since the murder: a card in the window and tape across the door (door tile 45, row 5).
+  const [fx, fy] = at(41, 5);
+  scene.add.image(fx + 24, fy + 1, 'ferme').setOrigin(0.5, 0).setDepth(4.7);
+  const [dx, dy] = at(45, 5);
+  scene.add.image(dx + 8, dy + 1, 'tape').setOrigin(0.5, 0).setDepth(4.8);
   return { cross };
 }
 
