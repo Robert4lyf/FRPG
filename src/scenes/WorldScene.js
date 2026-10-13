@@ -1,5 +1,6 @@
 import { buildTown, MAP_W, MAP_H, OY, SIGNS } from '../world/town.js';
 import { castFrame } from '../world/costumes.js';
+import { SPRITES, bodyBox } from '../world/sprites.js';
 import { CAST, CLUES, CHAPTER, PROLOGUE, MEMORIES } from '../story/chapter1.js';
 import { NightLighting, gradeCamera } from '../fx/noir.js';
 import { buildWetStreets, buildPoliceCar } from '../fx/street.js';
@@ -228,7 +229,8 @@ export default class WorldScene extends Phaser.Scene {
   buildCharacters() {
     const start = this.crime ? CHAPTER.playerStart : PROLOGUE.playerStart;
     this.player = this.physics.add.sprite(centre(start.x), centre(start.y + OY), 'cast', castFrame(PLAYER_COSTUME, 'up', 0));
-    this.player.body.setSize(10, 6).setOffset(3, 10);
+    this.player.setOrigin(0.5, SPRITES.originY);
+    { const [w, h, ox, oy] = bodyBox(10, 6); this.player.body.setSize(w, h).setOffset(ox, oy); }
     this.player.setCollideWorldBounds(true);
     this.player.costume = PLAYER_COSTUME;
     this.player.dir = 'up';
@@ -237,7 +239,9 @@ export default class WorldScene extends Phaser.Scene {
     const here = ([id, c]) => c.phases.includes(this.phase) && !(id === 'helene' && this.state.has('met_helene'));
     this.people = Object.entries(CAST).filter(here).map(([id, c]) => {
       const s = this.physics.add.sprite(centre(c.x), centre(c.y + OY), 'cast', castFrame(id, 'down', 0));
-      s.body.setSize(12, 8).setOffset(2, 8).setImmovable(true);
+      s.setOrigin(0.5, SPRITES.originY);
+      const [w, h, ox, oy] = bodyBox(12, 8);
+      s.body.setSize(w, h).setOffset(ox, oy).setImmovable(true);
       Object.assign(s, { kind: 'person', id, info: c, tx: c.x, ty: c.y + OY });
       s.setDepth(10 + s.y / 1000);
       return s;
@@ -333,7 +337,7 @@ export default class WorldScene extends Phaser.Scene {
       fontSize: '19px', color: '#d9cfb8', backgroundColor: '#0b0b0ecc', padding: { x: 6, y: 2 },
     }).setAlpha(0.8));
     this.tags = this.people.map((s) => {
-      s.tag = this.label(s.x, s.y - 8, s.info.name, {
+      s.tag = this.label(s.x, s.y - SPRITES.head, s.info.name, {
         fontSize: '18px', color: '#c7b38c', stroke: '#000000', strokeThickness: 5,
       }).setAlpha(0.85);
       return s.tag;
@@ -416,7 +420,7 @@ export default class WorldScene extends Phaser.Scene {
       s.anims.play(`${s.id}-${dirOf(nx - s.x, ny - s.y)}`, true);
       this.tweens.add({
         targets: s, x: nx, y: ny, duration: 260,
-        onUpdate: () => { s.tag?.setPosition(s.x, s.y - 8); s.setDepth(10 + s.y / 1000); },
+        onUpdate: () => { s.tag?.setPosition(s.x, s.y - SPRITES.head); s.setDepth(10 + s.y / 1000); },
         onComplete: step,
       });
     };
@@ -603,7 +607,7 @@ export default class WorldScene extends Phaser.Scene {
     this.indicator.setVisible(!!near);
     if (near) {
       this.indicator.setText(near.kind === 'clue' ? '?' : '!');
-      this.indicator.setPosition(near.x, near.y - (near.kind === 'clue' ? 6 : 15));
+      this.indicator.setPosition(near.x, near.y - (near.kind === 'clue' ? 6 : SPRITES.head + 7));
     }
   }
 }

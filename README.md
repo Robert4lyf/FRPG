@@ -70,4 +70,4 @@ Then open http://localhost:8000.
 
 ## Credits
 
-Art and sounds by [Kenney](https://kenney.nl) (CC0). Fonts: Special Elite (Apache 2.0) and Courier Prime (OFL). Details in `assets/CREDITS.md`.
+Art and sounds by [Kenney](https://kenney.nl) (CC0). The test character set (`?sprites=lpc&size=20|22|26`) is built from [LPC](https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator) art (CC-BY-SA 3.0 / GPL 3.0 / OGA-BY 3.0), credited per part in `assets/lpc/CREDITS.md`. Fonts: Special Elite (Apache 2.0) and Courier Prime (OFL). Details in `assets/CREDITS.md`.

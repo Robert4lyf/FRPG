@@ -11,3 +11,7 @@ All third-party assets are free to use in personal and commercial projects.
 
 Rain and thunder are generated in the browser; lighting, grain and rain textures are drawn in code.
 Kenney assets need no attribution, but credit is appreciated.
+
+## LPC characters (test set)
+
+See assets/lpc/CREDITS.md for authors and licences of every part used.
