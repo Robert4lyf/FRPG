@@ -66,38 +66,55 @@ function makeTextures(scene) {
     c.refresh();
   }
 
-  // French police car in the tileset's 3/4 view: the pack's red car (seen from behind),
-  // repainted white with a blue band, navy trim and a roof light bar.
+  // French police car, side-on with the roof visible (the same 3/4 angle as the characters),
+  // facing right: white body, blue band, dark windows, roof light bar.
   if (!tex.exists('policecar')) {
-    const src = scene.textures.get('urban').getSourceImage();
-    const c = tex.createCanvas('policecar', 32, 32);
+    const W = 46;
+    const H = 28;
+    const c = tex.createCanvas('policecar', W, H);
     const ctx = c.getContext();
-    [[447, 0, 0], [448, 16, 0], [474, 0, 16], [475, 16, 16]].forEach(([t, dx, dy]) => {
-      ctx.drawImage(src, (t % 27) * 16, Math.floor(t / 27) * 16, 16, 16, dx, dy, 16, 16);
-    });
-    const img = ctx.getImageData(0, 0, 32, 32);
-    const d = img.data;
-    const map = { dc615d: [232, 230, 239], c2504d: [201, 200, 214], a54240: [150, 150, 170], '742c34': [27, 35, 64] };
-    const hex = (o) => [d[o], d[o + 1], d[o + 2]].map((v) => v.toString(16).padStart(2, '0')).join('');
-    for (let y = 0; y < 32; y++) {
-      for (let x = 0; x < 32; x++) {
-        const o = (y * 32 + x) * 4;
-        if (!d[o + 3]) continue;
-        const h = hex(o);
-        let col = map[h];
-        // Blue band along the body (rows 20-21), red pinstripe below it.
-        if ((h === 'dc615d' || h === 'c2504d') && (y === 20 || y === 21)) col = [37, 70, 168];
-        if ((h === 'dc615d' || h === 'c2504d') && y === 22) col = [184, 40, 48];
-        if (col) [d[o], d[o + 1], d[o + 2]] = col;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-    // Light bar on the roof.
     const px = (x, y, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(x, y, w, h); };
-    px(13, 8, 8, 3, '#1b2340');
-    px(14, 9, 3, 1, '#3a6cff');
-    px(17, 9, 1, 1, '#d9d9e6');
-    px(18, 9, 2, 1, '#3a6cff');
+    const OUT = '#141a2e';
+    const BODY = '#e9e7f0';
+    const SHADE = '#b9b8c9';
+    const ROOF = '#f6f5fa';
+    const GLASS = '#26324d';
+    const GLASS_HI = '#5d6f96';
+    const BLUE = '#2546a8';
+    // Ground shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.ellipse(23, 25, 21, 3, 0, 0, Math.PI * 2); ctx.fill();
+    // Cabin (greenhouse) with slanted windscreen and rear window
+    px(12, 5, 21, 1, OUT);
+    px(11, 6, 24, 1, OUT);
+    px(10, 7, 27, 6, OUT);
+    px(13, 6, 19, 1, ROOF); // roof plane seen from above
+    px(12, 7, 22, 1, ROOF);
+    px(12, 8, 6, 4, GLASS); px(19, 8, 7, 4, GLASS); px(27, 8, 8, 4, GLASS); // windows
+    px(12, 8, 6, 1, GLASS_HI); px(19, 8, 7, 1, GLASS_HI); px(27, 8, 8, 1, GLASS_HI);
+    px(18, 8, 1, 4, BODY); px(26, 8, 1, 4, BODY); // pillars
+    px(35, 8, 2, 4, GLASS); // windscreen edge
+    // Body
+    px(3, 12, 41, 1, OUT);
+    px(2, 13, 43, 9, OUT);
+    px(3, 13, 41, 2, ROOF); // bonnet and boot tops
+    px(3, 15, 41, 6, BODY);
+    px(3, 20, 41, 1, SHADE);
+    px(3, 17, 41, 2, BLUE); // blue band
+    px(3, 19, 41, 1, '#c22d36'); // red pinstripe
+    px(21, 14, 1, 7, SHADE); // door line
+    px(43, 15, 1, 2, '#fff1b8'); // headlight
+    px(3, 15, 1, 2, '#c22d36'); // tail light
+    // Wheels
+    [[11, 21], [34, 21]].forEach(([wx, wy]) => {
+      px(wx - 4, wy - 1, 9, 6, OUT);
+      px(wx - 3, wy - 2, 7, 8, OUT);
+      px(wx - 2, wy, 5, 3, '#4b5064');
+      px(wx - 1, wy + 1, 2, 1, '#9aa0b4');
+    });
+    // Light bar on the roof
+    px(19, 3, 9, 3, OUT);
+    px(20, 4, 3, 1, '#3a6cff'); px(23, 4, 1, 1, '#d9d9e6'); px(24, 4, 3, 1, '#3a6cff');
     c.refresh();
   }
 }
@@ -158,7 +175,7 @@ export function buildPoliceCar(scene, x, y, OY) {
   const bottom = (y + 1 + OY) * TILE;
   scene.add.image(cx, bottom, 'policecar').setOrigin(0.5, 1).setDepth(10 + bottom / 1000);
 
-  const roof = { x: cx + 1, y: bottom - 23 };
+  const roof = { x: cx + 0.5, y: bottom - 24 };
   const beam = scene.add.image(roof.x, roof.y, 'beam')
     .setOrigin(0, 0.5).setTint(0x3c6bff).setAlpha(0.22)
     .setBlendMode(Phaser.BlendModes.ADD).setDepth(2062);
@@ -180,6 +197,6 @@ export function buildPoliceCar(scene, x, y, OY) {
 
   // Solid body for collisions (the lower part of the car, where its wheels meet the ground).
   const body = scene.physics.add.staticImage(cx, bottom - 6, undefined).setVisible(false);
-  body.body.setSize(30, 12);
+  body.body.setSize(32, 10); // exactly its two tiles, so pathfinding and collision agree
   return body;
 }

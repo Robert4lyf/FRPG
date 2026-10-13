@@ -65,6 +65,7 @@ export default class UIScene extends Phaser.Scene {
   setSound(on) {
     this.soundOn = on;
     this.sound.mute = !on;
+    this.audio?.setMuted(!on);
     speech.setEnabled(on);
     try { localStorage.setItem(SOUND_KEY, on ? 'on' : 'off'); } catch { /* ignore */ }
     this.soundBtn?.setLabel(on ? 'Son ✓' : 'Son ✗');

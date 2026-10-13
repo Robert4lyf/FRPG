@@ -214,7 +214,8 @@ export class Weather {
 export class NoirAudio {
   constructor(soundManager) {
     this.ctx = soundManager.context;
-    this.out = soundManager.masterVolumeNode || this.ctx?.destination;
+    // Route through Phaser's mute node so the Son button silences rain and thunder too.
+    this.out = soundManager.destination || soundManager.masterMuteNode;
     if (!this.ctx || !this.out) return;
     this.noise = this.makeNoise(3);
     this.startRain();
@@ -245,12 +246,23 @@ export class NoirAudio {
     const gain = ctx.createGain();
     gain.gain.value = 0.0;
     gain.gain.linearRampToValueAtTime(0.09, ctx.currentTime + 4);
-    src.connect(hp).connect(lp).connect(gain).connect(this.out);
+    // Own on/off switch as well, so muting never depends on Phaser's node alone.
+    this.switch = ctx.createGain();
+    this.switch.gain.value = this.muted ? 0 : 1;
+    src.connect(hp).connect(lp).connect(gain).connect(this.switch).connect(this.out);
     src.start();
   }
 
+  setMuted(m) {
+    this.muted = m;
+    if (this.switch) {
+      this.switch.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.switch.gain.setValueAtTime(m ? 0 : 1, this.ctx.currentTime);
+    }
+  }
+
   thunder() {
-    if (!this.ctx) return;
+    if (!this.ctx || this.muted) return;
     const ctx = this.ctx;
     const src = ctx.createBufferSource();
     src.buffer = this.noise;
