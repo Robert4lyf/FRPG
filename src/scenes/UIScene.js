@@ -67,7 +67,7 @@ export default class UIScene extends Phaser.Scene {
     this.sound.mute = !on;
     speech.setEnabled(on);
     try { localStorage.setItem(SOUND_KEY, on ? 'on' : 'off'); } catch { /* ignore */ }
-    this.soundBtn?.setLabel(on ? 'Son : oui' : 'Son : non');
+    this.soundBtn?.setLabel(on ? 'Son ✓' : 'Son ✗');
   }
 
   sfx(key, volume = 0.35) {
@@ -221,7 +221,7 @@ export default class UIScene extends Phaser.Scene {
     const narr = l.s === 'narr';
     const who = CAST[l.s];
     this.speaker.setText(narr ? '' : l.s === 'you' ? 'VOUS' : `${who.name.toUpperCase()} · ${who.role}`);
-    this.body.y = top + (narr ? 30 : 50);
+    this.body.y = top + 58;
     this.body.setText(l.fr, { italic: narr, color: narr ? '#cfc8b8' : C.ink });
     this.currentFr = plainText(l.fr);
     this.currentEn = l.en;

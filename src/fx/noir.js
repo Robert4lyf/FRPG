@@ -8,15 +8,13 @@ export function makeFxTextures(scene) {
   if (!tex.exists('light')) {
     const c = tex.createCanvas('light', 128, 128);
     const ctx = c.getContext();
-    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-    // Bright core with a fairly quick fall-off: a pool of lamplight, not fog.
-    g.addColorStop(0, 'rgba(255,255,255,1)');
-    g.addColorStop(0.45, 'rgba(255,255,255,0.92)');
-    g.addColorStop(0.75, 'rgba(255,255,255,0.35)');
-    g.addColorStop(0.9, 'rgba(255,255,255,0.08)');
-    g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 128, 128);
+    // Three hard-edged bands, like hand-drawn pixel-art lighting, rather than a soft blur.
+    [[64, 0.35], [50, 0.7], [34, 1]].forEach(([r, a]) => {
+      ctx.fillStyle = `rgba(255,255,255,${a})`;
+      ctx.beginPath();
+      ctx.arc(64, 64, r, 0, Math.PI * 2);
+      ctx.fill();
+    });
     c.refresh();
   }
 
@@ -71,10 +69,9 @@ export function makeFxTextures(scene) {
 export function gradeCamera(cam) {
   if (!cam.postFX) return;
   const cm = cam.postFX.addColorMatrix();
-  cm.saturate(-0.72);
-  cm.contrast(0.22, true);
-  cm.brightness(0.82, true);
-  cam.postFX.addVignette(0.5, 0.5, 0.82, 0.42);
+  cm.saturate(-0.25);
+  cm.contrast(0.12, true);
+  cam.postFX.addVignette(0.5, 0.5, 0.9, 0.35);
 }
 
 // Night: a dark layer over the world with soft holes cut by lamps, windows,
@@ -90,19 +87,25 @@ export class NightLighting {
     this.rt = scene.add.renderTexture(0, 0, vw, vh).setOrigin(0).setDepth(2050);
     this.vw = vw;
     this.vh = vh;
-    const strength = { lamp: 0.8, window: 0.7, flood: 0.85 };
+    const strength = { lamp: 1, window: 0.9, flood: 1 };
     this.lights = lights.map((l, i) => ({ ...l, strength: strength[l.kind] ?? 0.8, flicker: l.kind === 'lamp' && i % 4 === 1 }));
     this.movers = [];
     this.t = 0;
 
     // Coloured halos on top of the darkness.
-    const colour = { lamp: 0xffc27a, window: 0xffb060, flood: 0xd8e6ff };
-    this.glows = this.lights.map((l) => scene.add.image(l.x, l.y, 'light')
-      .setScale((l.radius * 1.6) / 128)
-      .setTint(colour[l.kind])
-      .setAlpha(l.kind === 'flood' ? 0.08 : 0.12)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(2060));
+    // Sodium-yellow street lamps, amber windows, a paler floodlight.
+    // Each light = a multiply tint (turns the lit ground yellow without bleaching it)
+    // plus a faint additive bloom.
+    const colour = { lamp: 0xffc23a, window: 0xffa53a, flood: 0xffe7a8 };
+    this.glows = this.lights.map((l) => {
+      const tint = scene.add.image(l.x, l.y, 'light')
+        .setScale((l.radius * 2) / 128).setTint(colour[l.kind]).setAlpha(0.9)
+        .setBlendMode(Phaser.BlendModes.MULTIPLY).setDepth(2055);
+      const bloom = scene.add.image(l.x, l.y, 'light')
+        .setScale((l.radius * 1.2) / 128).setTint(colour[l.kind]).setAlpha(0.1)
+        .setBlendMode(Phaser.BlendModes.ADD).setDepth(2060);
+      return { tint, bloom, setAlpha(a) { tint.setAlpha(0.9 * a); bloom.setAlpha(0.1 * a); } };
+    });
   }
 
   // Sprites that carry a small light with them (radius in px).
@@ -117,7 +120,7 @@ export class NightLighting {
     const oy = Math.floor(this.cam.scrollY + (this.cam.height - this.cam.height / this.cam.zoom) / 2) - this.margin;
     rt.setPosition(ox, oy);
     rt.clear();
-    rt.fill(0x030409, 0.93);
+    rt.fill(0x0b1838, 0.62);
     const visible = (x, y, r) => x + r > ox && x - r < ox + this.vw && y + r > oy && y - r < oy + this.vh;
     this.lights.forEach((l, i) => {
       let a = 1;
@@ -125,10 +128,10 @@ export class NightLighting {
         // Occasional stutter, like a failing bulb.
         const n = Math.sin(this.t * 0.013 + i) + Math.sin(this.t * 0.031 + i * 3);
         a = n > 1.6 ? 0.25 : 1;
-        this.glows[i].setAlpha(0.12 * a);
+        this.glows[i].setAlpha(a);
       }
       if (visible(l.x, l.y, l.radius)) {
-        rt.stamp('light', undefined, l.x - ox, l.y - oy, { scale: (l.radius * 2) / 128, erase: true, alpha: a * l.strength });
+        rt.stamp('light', undefined, l.x - ox, l.y - oy, { scale: (l.radius * 2) / 128, erase: true, alpha: a * l.strength * 0.85 });
       }
     });
     this.movers.forEach((m) => {

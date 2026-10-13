@@ -40,8 +40,8 @@ export default class WorldScene extends Phaser.Scene {
     gradeCamera(cam);
 
     this.lighting = new NightLighting(this, MAP_W * TILE, MAP_H * TILE, this.town.lights);
-    this.lighting.follow(this.player, 26, 0.6);
-    this.people.forEach((s) => this.lighting.follow(s, 16, 0.45));
+    // A faint pool around the inspector only; the moonlight keeps everyone else visible.
+    this.lighting.follow(this.player, 22, 0.3);
 
     this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT');
     ['SPACE', 'E', 'ENTER'].forEach((k) => this.input.keyboard.on(`keydown-${k}`, () => this.tryInteract()));

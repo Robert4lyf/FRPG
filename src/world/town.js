@@ -56,7 +56,7 @@ export function buildTown() {
   const light = (x, y, radius, kind) => lights.push({ x: x * 16, y: (y + OY) * 16, radius, kind });
   const lamp = (x, y) => {
     set('object', x, y, T.lampPole); set('overhead', x, y - 1, T.lampTop);
-    light(x + 0.5, y + 0.6, 40, 'lamp');
+    light(x + 0.5, y + 0.6, 46, 'lamp');
   };
   const sign = (x, y) => { set('object', x, y, T.signPole); set('overhead', x, y - 1, T.signTop); };
 
@@ -119,7 +119,7 @@ export function buildTown() {
 
   // Crime scene: police barriers and a floodlight on the south side of the fountain
   set('object', 20, 17, T.barrier[0]); set('object', 27, 17, T.barrier[1]);
-  light(23.5, 14.6, 44, 'flood');
+  light(23.5, 14.6, 52, 'flood');
 
   // Park (east) with pond, trees and benches
   nine('grass', 31, 9, 16, 16, T.grass9);
