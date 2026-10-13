@@ -60,19 +60,25 @@ export function makeButton(scene, x, y, w, h, label, onClick, opts = {}) {
   b.setEnabled = (on) => { b.enabled = on; paint(false); return b; };
   b.setDim = (on) => { b.dim = on; paint(false); return b; };
 
+  // A press must start and end on the button: a release left over from a tap elsewhere
+  // (e.g. the tap that made this menu appear) never selects it.
+  let armed = false;
   zone.on('pointerdown', (_p, _x, _y, e) => {
     e?.stopPropagation?.();
     onPress?.();
     if (!b.enabled) return;
+    armed = true;
     paint(true);
   });
   zone.on('pointerup', (_p, _x, _y, e) => {
     e?.stopPropagation?.();
-    if (!b.enabled) return;
+    const wasArmed = armed;
+    armed = false;
+    if (!b.enabled || !wasArmed) return;
     paint(false);
     onClick();
   });
-  zone.on('pointerout', () => paint(false));
+  zone.on('pointerout', () => { armed = false; paint(false); });
   layout();
   paint(false);
   return b;

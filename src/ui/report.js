@@ -126,7 +126,7 @@ export async function runReport(ui) {
       });
       ui.reportKeys = (key) => {
         const k = Number(key) - 1;
-        if (btns[k]?.enabled && btns[k].c.active) btns[k].c.list.find((o) => o.type === 'Zone').emit('pointerup');
+        if (btns[k]?.enabled && btns[k].c.active) { const z = btns[k].c.list.find((o) => o.type === 'Zone'); z.emit('pointerdown'); z.emit('pointerup'); }
       };
     });
     ui.reportKeys = null;

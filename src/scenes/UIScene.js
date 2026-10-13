@@ -39,9 +39,15 @@ export default class UIScene extends Phaser.Scene {
     this.setSound(soundOn);
 
     this.input.keyboard.on('keydown', (e) => this.onKey(e));
-    this.input.on('pointerdown', () => {
+    this.input.on('pointerdown', (_pointer, over) => {
       if (this.modal()) this.lock();
       this.hideTip();
+      // A tap on a button or word belongs to that object, never to "next".
+      if (over && over.length) return;
+      // Ignore a second event from the same tap (touch + emulated mouse, double fire).
+      const now = performance.now();
+      if (now - (this.lastTapAt || 0) < 250) return;
+      this.lastTapAt = now;
       if (this.waiting) this.continue();
     });
     this.state.onChange(() => this.updateHud());
@@ -77,18 +83,20 @@ export default class UIScene extends Phaser.Scene {
   }
 
   // Waits for a tap / Space. A tap while text is still typing just completes it.
+  // Real time (not game time), so a slow frame can't shorten the guard.
   waitTap(rich = null) {
-    this.readyAt = this.time.now + 200;
+    this.readyAt = Math.max(this.readyAt || 0, performance.now() + 200);
     this.waitingRich = rich;
     return new Promise((resolve) => { this.waiting = resolve; });
   }
 
   continue() {
-    if (!this.waiting || this.time.now < this.readyAt) return;
-    if (this.time.now - (this.wordTappedAt || 0) < 150) return; // tapping a word isn't "next"
+    const now = performance.now();
+    if (!this.waiting || now < this.readyAt) return;
+    if (now - (this.wordTappedAt || 0) < 150) return; // tapping a word isn't "next"
     if (this.waitingRich?.revealing) {
       this.waitingRich.finish();
-      this.readyAt = this.time.now + 150;
+      this.readyAt = now + 150;
       return;
     }
     const done = this.waiting;
@@ -292,9 +300,11 @@ export default class UIScene extends Phaser.Scene {
       this.menuResolve = resolve;
       options.forEach((o) => {
         const btn = makeButton(this, 0, 0, colW, 46, this.showEn ? o.en : o.label, () => {
-          if (this.time.now < this.readyAt) return;
+          if (performance.now() < this.readyAt) return;
           const r = this.menuResolve;
           this.clearOptions();
+          // The first reply line can't be skipped by a stray second event from this tap.
+          this.readyAt = performance.now() + 350;
           r?.(o.value);
         }, { size: 18, align: 'left' });
         btn.setDim(!!o.dim);
@@ -302,7 +312,7 @@ export default class UIScene extends Phaser.Scene {
         this.options.push({ ...o, btn });
       });
       this.arrangeOptions();
-      this.readyAt = this.time.now + 200;
+      this.readyAt = performance.now() + 200;
     });
   }
 
@@ -369,7 +379,7 @@ export default class UIScene extends Phaser.Scene {
 
   wordTip(fr, en, obj) {
     this.lock();
-    this.wordTappedAt = this.time.now;
+    this.wordTappedAt = performance.now();
     this.state.markLooked(fr);
     this.hideTip();
     speech.speak(fr);
@@ -641,9 +651,10 @@ export default class UIScene extends Phaser.Scene {
     }
     if (this.options.length && /^[1-9]$/.test(k)) {
       const o = this.options[Number(k) - 1];
-      if (o && this.menuResolve && this.time.now >= this.readyAt) {
+      if (o && this.menuResolve && performance.now() >= this.readyAt) {
         const r = this.menuResolve;
         this.clearOptions();
+        this.readyAt = performance.now() + 350;
         r(o.value);
       }
       return;
