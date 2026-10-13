@@ -106,7 +106,23 @@ export class NightLighting {
       const bloom = scene.add.image(l.x, l.y, 'light')
         .setScale((l.radius * 1.6) / 128).setTint(colour[l.kind]).setAlpha(0.14)
         .setBlendMode(Phaser.BlendModes.ADD).setDepth(2060);
-      return { tint, bloom, setAlpha(a) { tint.setAlpha(a); bloom.setAlpha(0.14 * a); } };
+      // The source itself glows: bulbs on lamp heads, panes of lit windows, the floodlight face.
+      const src = (l.bulbs || []).map((bl) => {
+        if (bl.w) {
+          return scene.add.rectangle(bl.x, bl.y, bl.w, bl.h, colour[l.kind], 0.55)
+            .setOrigin(0).setBlendMode(Phaser.BlendModes.ADD).setDepth(2065);
+        }
+        return scene.add.image(bl.x, bl.y, 'light').setScale((bl.r || 6) * 2 / 128)
+          .setTint(0xfff0b0).setAlpha(1).setBlendMode(Phaser.BlendModes.ADD).setDepth(2065);
+      });
+      const base = src.map((o) => o.alpha);
+      return {
+        tint, bloom, src,
+        setAlpha(a) {
+          tint.setAlpha(a); bloom.setAlpha(0.14 * a);
+          src.forEach((o, k) => o.setAlpha(base[k] * (0.25 + 0.75 * a)));
+        },
+      };
     });
   }
 

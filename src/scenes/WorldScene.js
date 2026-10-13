@@ -32,6 +32,7 @@ export default class WorldScene extends Phaser.Scene {
     this.buildCrimeScene();
     this.buildFountain();
     this.buildCharacters();
+    this.buildProps();
     this.buildClues();
     this.buildLabels();
 
@@ -41,8 +42,6 @@ export default class WorldScene extends Phaser.Scene {
     gradeCamera(cam);
 
     this.lighting = new NightLighting(this, MAP_W * TILE, MAP_H * TILE, this.town.lights);
-    // A faint pool around the inspector only; the moonlight keeps everyone else visible.
-    this.lighting.follow(this.player, 30, 0.22);
 
     this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT');
     ['SPACE', 'E', 'ENTER'].forEach((k) => this.input.keyboard.on(`keydown-${k}`, () => this.tryInteract()));
@@ -155,6 +154,37 @@ export default class WorldScene extends Phaser.Scene {
         ripples.strokeEllipse(fx, fy + 2, 30 + r * 50, 10 + r * 18);
       }
     });
+  }
+
+  // Props that aren't in the tileset (drawn here) and block movement.
+  buildProps() {
+    if (!this.textures.exists('floodlight')) {
+      const c = this.textures.createCanvas('floodlight', 16, 22);
+      const ctx = c.getContext();
+      const px = (x, y, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(x, y, w, h); };
+      // Tripod legs
+      ctx.strokeStyle = '#2b2838'; ctx.lineWidth = 1;
+      [[8, 9, 2, 21], [8, 9, 14, 21], [8, 9, 8, 21]].forEach(([x1, y1, x2, y2]) => {
+        ctx.beginPath(); ctx.moveTo(x1 + 0.5, y1); ctx.lineTo(x2 + 0.5, y2); ctx.stroke();
+      });
+      px(7, 7, 2, 4, '#4b4763');
+      // Lamp housing, angled toward the body (right)
+      px(3, 1, 10, 7, '#2b2838');
+      px(4, 2, 8, 5, '#4b4763');
+      px(11, 1, 3, 7, '#2b2838');
+      px(12, 2, 2, 5, '#fff2c0');
+      c.refresh();
+    }
+    this.solidProps = this.physics.add.staticGroup();
+    this.town.props.forEach((p) => {
+      if (p.kind !== 'floodlight') return;
+      const x = p.x * TILE + 8;
+      const y = (p.y + OY) * TILE + 14;
+      this.add.image(x, y, 'floodlight').setOrigin(0.5, 1).setDepth(10 + y / 1000);
+      const body = this.solidProps.create(x, y - 4, undefined).setVisible(false);
+      body.body.setSize(12, 8);
+    });
+    this.physics.add.collider(this.player, this.solidProps);
   }
 
   // Chalk outline where the body was laid out, and muddy prints from the park.
