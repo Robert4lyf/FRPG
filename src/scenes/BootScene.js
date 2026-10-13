@@ -16,6 +16,9 @@ export default class BootScene extends Phaser.Scene {
     this.load.on('progress', (p) => label.setAlpha(0.3 + p * 0.7));
 
     this.load.spritesheet('urban', 'assets/tiles/urban.png', { frameWidth: 16, frameHeight: 16 });
+    // Dialogue portraits (frame 0 eyes open, frame 1 blinking), drawn by tools/portraits.py.
+    ['inspector', 'helene', 'dubois', 'lebrun', 'theo', 'garnier', 'delacroix', 'claire', 'roux']
+      .forEach((id) => this.load.spritesheet(`portrait_${id}`, `assets/portraits/${id}.png`, { frameWidth: 48, frameHeight: 48 }));
     ['right', 'wrong', 'click', 'open']
       .forEach((k) => this.load.audio(k, [`assets/audio/${k}.ogg`, `assets/audio/${k}.mp3`]));
   }

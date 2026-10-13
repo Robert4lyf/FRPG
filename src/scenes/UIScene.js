@@ -184,7 +184,21 @@ export default class UIScene extends Phaser.Scene {
     this.tweens.add({ targets: this.hint, alpha: 0.15, yoyo: true, repeat: -1, duration: 500 });
     this.enBtn = makeButton(this, 0, 0, 56, 34, 'EN', () => this.toggleEn(), { size: 15 });
     this.ttsBtn = makeButton(this, 0, 0, 56, 34, '♪', () => speech.speak(this.currentFr), { size: 17 });
-    this.dlg.add([this.dlgG, this.speaker, this.body.container, this.bodyEn, this.hint, this.enBtn.c, this.ttsBtn.c]);
+    // Speaker portrait at the left of the text box, with a blink now and then.
+    this.portraitZoom = this.portrait ? 2 : 3;
+    this.portraitFrame = this.add.graphics();
+    this.portraitImg = this.add.image(0, 0, 'portrait_inspector', 0).setOrigin(0).setScale(this.portraitZoom).setVisible(false);
+    this.dlg.add([this.dlgG, this.portraitFrame, this.portraitImg, this.speaker, this.body.container, this.bodyEn, this.hint, this.enBtn.c, this.ttsBtn.c]);
+    const blink = () => {
+      this.time.delayedCall(2400 + Math.random() * 3200, () => {
+        if (this.portraitImg.visible) {
+          this.portraitImg.setFrame(1);
+          this.time.delayedCall(130, () => this.portraitImg.setFrame(0));
+        }
+        blink();
+      });
+    };
+    blink();
   }
 
   layoutPanel(h) {
@@ -225,17 +239,40 @@ export default class UIScene extends Phaser.Scene {
     if (this.options.length) this.arrangeOptions();
   }
 
+  // Shows the speaker's portrait (if they have one); returns the x where text should start.
+  showPortrait(id, top) {
+    const key = `portrait_${id}`;
+    this.portraitFrame.clear();
+    if (!id || !this.textures.exists(key)) {
+      this.portraitImg.setVisible(false);
+      return PAD;
+    }
+    const size = 48 * this.portraitZoom;
+    const x = PAD - 6;
+    const y = top + 16;
+    this.portraitFrame.fillStyle(0x161a2c, 1).fillRect(x, y, size, size);
+    this.portraitFrame.lineStyle(1, 0xd9d2c3, 0.5).strokeRect(x - 1.5, y - 1.5, size + 3, size + 3);
+    if (this.portraitImg.texture.key !== key) this.portraitImg.setTexture(key, 0);
+    this.portraitImg.setPosition(x, y).setFrame(0).setVisible(true);
+    return x + size + 16;
+  }
+
   async showLine(l) {
     this.clearOptions();
     const top = this.layoutPanel(this.linePanelH());
     const narr = l.s === 'narr';
     const who = CAST[l.s];
     this.speaker.setText(narr ? '' : l.s === 'you' ? 'VOUS' : `${who.name.toUpperCase()} · ${who.role}`);
+    const textX = this.showPortrait(l.s === 'you' ? 'inspector' : l.s, top);
+    this.speaker.setX(textX);
+    this.body.x = textX;
+    this.body.width = this.W - PAD - textX;
+    this.bodyEn.setWordWrapWidth(this.W - PAD - textX);
     this.body.y = top + 58;
     this.body.setText(l.fr, { italic: narr, color: narr ? '#cfc8b8' : C.ink });
     this.currentFr = plainText(l.fr);
     this.currentEn = l.en;
-    this.bodyEn.setText(l.en).setPosition(PAD, this.body.y + this.body.height + 2).setVisible(this.showEn);
+    this.bodyEn.setText(l.en).setPosition(textX, this.body.y + this.body.height + 2).setVisible(this.showEn);
     this.ttsBtn.c.setVisible(this.soundOn && 'speechSynthesis' in window);
     this.enBtn.c.setVisible(true);
 
@@ -289,6 +326,9 @@ export default class UIScene extends Phaser.Scene {
 
   menu(title, options) {
     this.clearOptions();
+    this.portraitImg.setVisible(false);
+    this.portraitFrame.clear();
+    this.speaker.setX(PAD);
     this.body.clear();
     this.bodyEn.setVisible(false);
     this.currentEn = null;
