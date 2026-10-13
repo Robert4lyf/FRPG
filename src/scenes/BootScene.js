@@ -3,6 +3,7 @@ import GameState from '../story/state.js';
 import { makeFxTextures } from '../fx/noir.js';
 import { FONT_TITLE } from '../ui/theme.js';
 import { SPRITES } from '../world/sprites.js';
+import { READY } from '../story/cutscenes.js';
 
 const LPC_ROW = { up: 0, left: 1, down: 2, right: 3 };
 const LPC_STEP = [0, 2, 6]; // idle, and the two contact poses used for static 'step' frames
@@ -27,6 +28,8 @@ export default class BootScene extends Phaser.Scene {
       COSTUME_IDS.forEach((id) => this.load.spritesheet(`lpc_${id}`, `assets/lpc/${SPRITES.size}/${id}.png`,
         { frameWidth: SPRITES.size, frameHeight: SPRITES.size }));
     }
+    // Cutscene stills (the rest show a placeholder until their image is added).
+    READY.forEach((id) => this.load.image(`cut_${id}`, `assets/cutscenes/${id}.jpg`));
     ['right', 'wrong', 'click', 'open']
       .forEach((k) => this.load.audio(k, [`assets/audio/${k}.ogg`, `assets/audio/${k}.mp3`]));
   }

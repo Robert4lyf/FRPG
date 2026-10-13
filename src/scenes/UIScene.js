@@ -1,5 +1,5 @@
 import {
-  CAST, CLUES, STATEMENTS, CONFLICTS, INTRO, NIGHT, CHAPTERS, chapterOf, phaseOf, timeKey,
+  CAST, CLUES, STATEMENTS, CONFLICTS, CHAPTERS, chapterOf, phaseOf, timeKey,
 } from '../story/story.js';
 import { speech } from '../learning/speech.js';
 import {
@@ -7,6 +7,8 @@ import {
 } from '../ui/theme.js';
 import { Weather, NoirAudio } from '../fx/noir.js';
 import { runReport } from '../ui/report.js';
+import { runCutscene } from '../ui/cutscene.js';
+import { CUTSCENES } from '../story/cutscenes.js';
 
 const SOUND_KEY = 'frpg.sound';
 const PAD = 30;
@@ -712,7 +714,7 @@ export default class UIScene extends Phaser.Scene {
 
   async begin() {
     if (!this.state.has('intro_seen')) {
-      await this.card(INTRO, CHAPTERS.prologue.title.toUpperCase(), CHAPTERS.prologue.titleEn);
+      await runCutscene(this, CUTSCENES.prologue, CHAPTERS.prologue.title.toUpperCase(), CHAPTERS.prologue.titleEn);
       this.state.set('intro_seen');
     }
     // Resume if the game was closed after the prologue but before the night card finished.
@@ -733,7 +735,7 @@ export default class UIScene extends Phaser.Scene {
 
   // The night of the murder, then the morning: rebuild the town for chapter 1.
   async night() {
-    await this.card(NIGHT, CHAPTERS.ch1.title.toUpperCase(), CHAPTERS.ch1.titleEn);
+    await runCutscene(this, CUTSCENES.ch1, CHAPTERS.ch1.title.toUpperCase(), CHAPTERS.ch1.titleEn);
     this.state.set('night_seen');
     this.scene.get('World').scene.restart();
     this.scene.restart();
@@ -771,7 +773,7 @@ export default class UIScene extends Phaser.Scene {
   // Title card for the next chapter, then rebuild the town for it.
   async startChapter(id) {
     const next = CHAPTERS[id];
-    await this.card(next.intro, next.title.toUpperCase(), next.titleEn);
+    await runCutscene(this, CUTSCENES[id], next.title.toUpperCase(), next.titleEn);
     this.state.set(next.flags.start);
     this.scene.get('World').scene.restart();
     this.scene.restart();
@@ -782,6 +784,7 @@ export default class UIScene extends Phaser.Scene {
   onKey(e) {
     const k = e.key;
     if (this.reportKeys) { this.reportKeys(k); return; }
+    if (this.cutsceneSkip && k === 'Escape') { this.cutsceneSkip(); return; }
     if (this.overlay) {
       if (k === 'Escape') {
         if (this.overlayKind === 'carnet') this.closeCarnet(); else this.pickerCancel?.();
