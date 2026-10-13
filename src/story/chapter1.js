@@ -10,6 +10,7 @@
 //   fr: French with [[word|gloss]] marking key vocabulary (tappable, collected in the Carnet)
 //   en: English translation (shown only when the player taps EN)
 //   record: statement id added to the case notebook; set: flag set when the line is shown
+//   e: portrait expression for the line: 'hostile' or 'shaken' (default neutral)
 // Grammar: present tense and passé composé, with a little imparfait.
 // tu / vous matters: old friends say "tu"; people who resent Julien insist on "vous".
 // Positions are street tile coordinates (see world/town.js).
@@ -162,7 +163,7 @@ export const PROLOGUE_DIALOGUE = {
     first: [
       { s: 'helene', fr: 'Julien ! Tu es venu...', en: 'Julien! You came...' },
       { s: 'you', fr: "Bien sûr. Ta lettre m'a fait peur. Qu'est-ce qui se passe ?", en: "Of course. Your letter scared me. What's going on?" },
-      { s: 'helene', fr: 'Pas ici. Pas ce soir. Quelqu\'un nous [[regarde|is watching]], peut-être.', en: 'Not here. Not tonight. Someone may be watching us.' },
+      { s: 'helene', e: 'shaken', fr: 'Pas ici. Pas ce soir. Quelqu\'un nous [[regarde|is watching]], peut-être.', en: 'Not here. Not tonight. Someone may be watching us.' },
       { s: 'narr', fr: 'Elle regarde la place, la mairie, les fenêtres. Elle [[tremble|is shaking]].', en: 'She looks at the square, the town hall, the windows. She is shaking.' },
       { s: 'helene', fr: 'Demain matin, sept heures, au café de Théo. Je te dirai tout.', en: "Tomorrow morning, seven o'clock, at Théo's café. I'll tell you everything." },
       { s: 'you', fr: 'Hélène, si tu es en [[danger|danger]]...', en: "Hélène, if you're in danger..." },
@@ -193,7 +194,7 @@ export const PROLOGUE_DIALOGUE = {
   theo: {
     first: [
       { s: 'theo', fr: '[[Ben ça alors|Well I never]]... Julien ?', en: 'Well I never... Julien?' },
-      { s: 'theo', fr: 'Quinze ans. Quinze ans, et pas une [[carte postale|postcard]].', en: 'Fifteen years. Fifteen years, and not a single postcard.' },
+      { s: 'theo', e: 'hostile', fr: 'Quinze ans. Quinze ans, et pas une [[carte postale|postcard]].', en: 'Fifteen years. Fifteen years, and not a single postcard.' },
       { s: 'you', fr: 'Je sais, Théo. Je suis [[désolé|sorry]].', en: "I know, Théo. I'm sorry." },
       { s: 'theo', fr: "[[Bah|Eh]]... [[T'es|you're]] là, c'est l'essentiel.", en: "Eh... You're here, that's what matters." },
       { s: 'theo', fr: "Hélène m'a demandé de te garder la [[chambre|room]] au-dessus du café. Elle est bizarre en ce moment.", en: "Hélène asked me to keep you the room above the café. She's been strange lately." },
@@ -209,8 +210,8 @@ export const PROLOGUE_DIALOGUE = {
 export const DIALOGUE = {
   theo: {
     first: [
-      { s: 'theo', fr: "Julien... C'est Hélène. On l'a [[trouvée|found]] dans la fontaine.", en: "Julien... It's Hélène. They found her in the fountain." },
-      { s: 'theo', fr: 'Elle est [[morte|dead]].', en: "She's dead." },
+      { s: 'theo', e: 'shaken', fr: "Julien... C'est Hélène. On l'a [[trouvée|found]] dans la fontaine.", en: "Julien... It's Hélène. They found her in the fountain." },
+      { s: 'theo', e: 'shaken', fr: 'Elle est [[morte|dead]].', en: "She's dead." },
       { s: 'narr', fr: "Sept heures, au café. Elle n'est jamais venue.", en: "Seven o'clock, at the café. She never came." },
       { s: 'theo', fr: "Les gendarmes sont là-bas. Dubois dit que c'est un [[accident|accident]].", en: "The gendarmes are over there. Dubois says it's an accident." },
     ],
@@ -222,7 +223,7 @@ export const DIALOGUE = {
           { s: 'theo', fr: "J'ai fermé à vingt-trois heures. Après, j'ai fait le [[ménage|cleaning]].", en: 'I closed at eleven. Afterwards, I did the cleaning.' },
           { s: 'theo', fr: "Vers minuit moins vingt, j'ai [[entendu|heard]] un cri.", en: 'Around twenty to midnight, I heard a scream.', record: 'theo_cri' },
           { s: 'theo', fr: "J'ai regardé par la [[fenêtre|window]]. Avec la pluie, je n'ai rien vu. Toi aussi, tu l'as entendu ?", en: "I looked out of the window. With the rain, I didn't see anything. You heard it too?" },
-          { s: 'you', fr: "Oui. J'ai cru que je rêvais.", en: 'Yes. I thought I was dreaming.' },
+          { s: 'you', e: 'shaken', fr: "Oui. J'ai cru que je rêvais.", en: 'Yes. I thought I was dreaming.' },
           { s: 'narr', fr: "J'étais là. Juste au-dessus. Et je n'ai rien fait.", en: "I was there. Right above. And I did nothing." },
         ],
       },
@@ -248,12 +249,12 @@ export const DIALOGUE = {
 
   dubois: {
     first: [
-      { s: 'dubois', fr: 'Tiens. Le petit Morel. Le grand [[inspecteur|inspector]] de Lyon.', en: 'Well. Young Morel. The big inspector from Lyon.' },
+      { s: 'dubois', e: 'hostile', fr: 'Tiens. Le petit Morel. Le grand [[inspecteur|inspector]] de Lyon.', en: 'Well. Young Morel. The big inspector from Lyon.' },
       { s: 'you', fr: "Bonjour, Dubois. Qu'est-ce qui s'est [[passé|happened]] ?", en: 'Hello, Dubois. What happened?' },
       { s: 'dubois', fr: "Hélène Marchand. Le jardinier l'a trouvée dans la fontaine à cinq heures et demie.", en: 'Hélène Marchand. The gardener found her in the fountain at half past five.' },
       { s: 'dubois', fr: "Elle est [[tombée|fell]]. Elle s'est [[noyée|drowned]]. C'est un accident.", en: "She fell. She drowned. It's an accident." },
-      { s: 'you', fr: "Elle m'a écrit. Elle avait peur. Ce n'est pas un accident.", en: "She wrote to me. She was scared. It isn't an accident." },
-      { s: 'dubois', fr: "Vous êtes parti il y a quinze ans, monsieur l'inspecteur. Ici, ce n'est plus chez vous.", en: "You left fifteen years ago, inspector. This isn't your home any more." },
+      { s: 'you', e: 'hostile', fr: "Elle m'a écrit. Elle avait peur. Ce n'est pas un accident.", en: "She wrote to me. She was scared. It isn't an accident." },
+      { s: 'dubois', e: 'hostile', fr: "Vous êtes parti il y a quinze ans, monsieur l'inspecteur. Ici, ce n'est plus chez vous.", en: "You left fifteen years ago, inspector. This isn't your home any more." },
       { s: 'narr', fr: "Il me dit « vous ». Quand j'étais petit, il me disait « tu ».", en: 'He calls me "vous". When I was little, he called me "tu".' },
       { s: 'dubois', fr: 'Regardez si vous voulez. Mais ne [[dérangez|disturb]] pas les gens.', en: "Look around if you want. But don't bother people.", set: 'met_dubois' },
     ],
@@ -277,7 +278,7 @@ export const DIALOGUE = {
       {
         id: 'accident', q: "Son sac est encore là. Avec l'argent.", en: 'Her bag is still there. With the money.', requires: ['sac'],
         lines: [
-          { s: 'dubois', fr: "Et alors ? Ce n'est pas un vol. C'est un accident. Je vous l'ai [[dit|told]].", en: "So? It isn't a robbery. It's an accident. I told you." },
+          { s: 'dubois', e: 'hostile', fr: "Et alors ? Ce n'est pas un vol. C'est un accident. Je vous l'ai [[dit|told]].", en: "So? It isn't a robbery. It's an accident. I told you." },
           { s: 'narr', fr: 'Il ne me regarde pas dans les yeux.', en: "He doesn't look me in the eye." },
         ],
       },
@@ -288,22 +289,22 @@ export const DIALOGUE = {
           { s: 'you', fr: 'Une [[dispute|argument]]. Entre Hélène et une femme.', en: 'An argument. Between Hélène and a woman.' },
           { s: 'dubois', fr: 'Une femme...', en: 'A woman...' },
           { s: 'narr', fr: 'Son [[téléphone|phone]] sonne. Il écoute. Son [[visage|face]] change.', en: 'His phone rings. He listens. His face changes.' },
-          { s: 'dubois', fr: "C'était le [[médecin|doctor]]. Hélène n'est pas morte noyée.", en: "That was the doctor. Hélène didn't drown." },
+          { s: 'dubois', e: 'shaken', fr: "C'était le [[médecin|doctor]]. Hélène n'est pas morte noyée.", en: "That was the doctor. Hélène didn't drown." },
           { s: 'dubois', fr: "Elle a reçu un [[coup|blow]] à la tête. Avant de tomber dans l'eau.", en: 'She was struck on the head. Before she fell into the water.' },
-          { s: 'dubois', fr: '...Vous aviez raison, Julien.', en: '...You were right, Julien.' },
+          { s: 'dubois', e: 'shaken', fr: '...Vous aviez raison, Julien.', en: '...You were right, Julien.' },
           { s: 'narr', fr: "Mon prénom. Pour la première fois depuis quinze ans.", en: 'My first name. For the first time in fifteen years.' },
           { s: 'dubois', fr: "C'est un [[meurtre|murder]].", en: "It's a murder.", set: 'chapter1_done' },
         ],
       },
     ],
-    wrong: [{ s: 'dubois', fr: 'Vous perdez votre temps. Et le mien.', en: "You're wasting your time. And mine." }],
+    wrong: [{ s: 'dubois', e: 'hostile', fr: 'Vous perdez votre temps. Et le mien.', en: "You're wasting your time. And mine." }],
   },
 
   lebrun: {
     first: [
       { s: 'lebrun', fr: 'Le petit Morel. Vous voliez les [[pommes|apples]] du parc, avant.', en: 'Young Morel. You used to steal the apples from the park.' },
       { s: 'lebrun', fr: "J'ai déjà tout dit au brigadier. Je suis arrivé à cinq heures et demie. Comme tous les jours.", en: "I've already told the sergeant everything. I got here at half past five. Like every day." },
-      { s: 'lebrun', fr: "Je l'ai vue dans l'eau. Je ne l'ai pas [[touchée|touched]].", en: "I saw her in the water. I didn't touch her." },
+      { s: 'lebrun', e: 'shaken', fr: "Je l'ai vue dans l'eau. Je ne l'ai pas [[touchée|touched]].", en: "I saw her in the water. I didn't touch her." },
       { s: 'narr', fr: 'Ses mains [[tremblent|are shaking]]. Le froid, peut-être.', en: 'His hands are shaking. The cold, maybe.' },
     ],
     greet: [{ s: 'lebrun', fr: 'Quoi encore ?', en: 'What now?' }],
@@ -325,7 +326,7 @@ export const DIALOGUE = {
       {
         id: 'boue', q: 'Il y a des traces de boue. Elles viennent du parc.', en: 'There are muddy prints. They come from the park.', requires: ['boue'],
         lines: [
-          { s: 'lebrun', fr: 'Je travaille dans le parc. Il y a de la boue partout. Regardez mes [[bottes|boots]].', en: 'I work in the park. There is mud everywhere. Look at my boots.' },
+          { s: 'lebrun', e: 'hostile', fr: 'Je travaille dans le parc. Il y a de la boue partout. Regardez mes [[bottes|boots]].', en: 'I work in the park. There is mud everywhere. Look at my boots.' },
           { s: 'narr', fr: 'Il a raison. Mais il regarde [[ailleurs|elsewhere]].', en: "He's right. But he looks away." },
         ],
       },
@@ -334,16 +335,16 @@ export const DIALOGUE = {
       garnier_vu: [
         { s: 'you', fr: 'Garnier vous a vu sur la place. À vingt-trois heures trente.', en: 'Garnier saw you in the square. At half past eleven.' },
         { s: 'lebrun', fr: '...', en: '...' },
-        { s: 'lebrun', fr: "D'accord. Je suis sorti. J'ai [[menti|lied]].", en: 'All right. I went out. I lied.' },
+        { s: 'lebrun', e: 'shaken', fr: "D'accord. Je suis sorti. J'ai [[menti|lied]].", en: 'All right. I went out. I lied.' },
         { s: 'lebrun', fr: "Hélène m'a donné [[rendez-vous|a meeting]] à la fontaine. Elle voulait me parler du parc.", en: 'Hélène asked to meet me at the fountain. She wanted to talk to me about the park.' },
         { s: 'lebrun', fr: "Quand je suis arrivé, elle se [[disputait|was arguing]] avec quelqu'un. Une femme.", en: 'When I arrived, she was arguing with someone. A woman.', record: 'lebrun_dispute' },
         { s: 'you', fr: 'Qui ?', en: 'Who?' },
         { s: 'lebrun', fr: "Je n'ai pas vu son visage. Il faisait [[noir|dark]]. Il pleuvait.", en: "I didn't see her face. It was dark. It was raining." },
-        { s: 'lebrun', fr: "J'ai eu peur. Je suis rentré chez moi. Je n'ai rien fait, je vous le [[jure|swear]] !", en: "I was scared. I went home. I didn't do anything, I swear!", set: 'lebrun_confessed' },
+        { s: 'lebrun', e: 'shaken', fr: "J'ai eu peur. Je suis rentré chez moi. Je n'ai rien fait, je vous le [[jure|swear]] !", en: "I was scared. I went home. I didn't do anything, I swear!", set: 'lebrun_confessed' },
       ],
       theo_cri: [
         { s: 'you', fr: 'Théo a entendu un cri. Vers minuit moins vingt.', en: 'Théo heard a scream. Around twenty to midnight.' },
-        { s: 'lebrun', fr: "Moi, je dormais. Je n'ai rien entendu.", en: "I was asleep. I didn't hear anything." },
+        { s: 'lebrun', e: 'hostile', fr: "Moi, je dormais. Je n'ai rien entendu.", en: "I was asleep. I didn't hear anything." },
         { s: 'narr', fr: 'Il ment. Mais il me faut une [[preuve|proof]].', en: "He's lying. But I need proof." },
       ],
     },
@@ -352,7 +353,7 @@ export const DIALOGUE = {
 
   garnier: {
     first: [
-      { s: 'garnier', fr: 'Julien... Je suis désolé, mon garçon. Je sais qu\'elle comptait pour toi.', en: 'Julien... I\'m sorry, my boy. I know she mattered to you.' },
+      { s: 'garnier', e: 'shaken', fr: 'Julien... Je suis désolé, mon garçon. Je sais qu\'elle comptait pour toi.', en: 'Julien... I\'m sorry, my boy. I know she mattered to you.' },
       { s: 'garnier', fr: "Après la pluie, le beau temps, comme on dit. Mais pas aujourd'hui.", en: "After the rain comes sunshine, as they say. But not today." },
     ],
     greet: [{ s: 'garnier', fr: 'Le prochain bus part dans une heure. Pas pour toi, hein ?', en: 'The next bus leaves in an hour. Not for you, eh?' }],
@@ -394,7 +395,7 @@ export const DIALOGUE = {
       {
         id: 'soir', q: 'Où étiez-vous hier soir ?', en: 'Where were you last night?',
         lines: [
-          { s: 'delacroix', fr: "Pardon ? Vous m'[[accusez|accuse]] ? Quelle insolence.", en: 'I beg your pardon? Are you accusing me? What insolence.' },
+          { s: 'delacroix', e: 'hostile', fr: "Pardon ? Vous m'[[accusez|accuse]] ? Quelle insolence.", en: 'I beg your pardon? Are you accusing me? What insolence.' },
           { s: 'delacroix', fr: "J'étais à la mairie jusqu'à vingt-deux heures. Puis chez moi, avec ma [[femme|wife]].", en: 'I was at the town hall until ten. Then at home, with my wife.', record: 'maire_alibi' },
         ],
       },
@@ -402,13 +403,13 @@ export const DIALOGUE = {
         id: 'parc', q: 'Pourquoi vendre le parc ?', en: 'Why sell the park?', requires: ['maire_parc'],
         lines: [
           { s: 'delacroix', fr: "Belleville n'a pas d'argent. Un [[promoteur|developer]] veut construire des [[appartements|flats]].", en: 'Belleville has no money. A developer wants to build flats.' },
-          { s: 'delacroix', fr: "C'est l'[[avenir|future]]. Hélène vivait dans le passé. Comme vous, peut-être.", en: 'It is the future. Hélène lived in the past. Like you, perhaps.' },
+          { s: 'delacroix', e: 'hostile', fr: "C'est l'[[avenir|future]]. Hélène vivait dans le passé. Comme vous, peut-être.", en: 'It is the future. Hélène lived in the past. Like you, perhaps.' },
         ],
       },
     ],
     evidence: {
       echarpe: [
-        { s: 'delacroix', fr: 'Une écharpe rouge ? Beaucoup de femmes portent du rouge, monsieur Morel.', en: 'A red scarf? Lots of women wear red, Mr Morel.' },
+        { s: 'delacroix', e: 'shaken', fr: 'Une écharpe rouge ? Beaucoup de femmes portent du rouge, monsieur Morel.', en: 'A red scarf? Lots of women wear red, Mr Morel.' },
         { s: 'narr', fr: "Mais ses yeux vont vers l'école.", en: 'But his eyes go towards the school.' },
       ],
     },
@@ -418,10 +419,10 @@ export const DIALOGUE = {
   claire: {
     first: [
       { s: 'claire', fr: 'Julien.', en: 'Julien.' },
-      { s: 'claire', fr: "Tu n'aurais pas dû [[revenir|come back]].", en: "You shouldn't have come back." },
+      { s: 'claire', e: 'hostile', fr: "Tu n'aurais pas dû [[revenir|come back]].", en: "You shouldn't have come back." },
       { s: 'narr', fr: "Ses yeux sont rouges. Elle ne porte pas d'[[écharpe|scarf]]. Malgré le froid.", en: "Her eyes are red. She isn't wearing a scarf. Despite the cold." },
       { s: 'you', fr: 'Claire... Je suis désolé. Pour Hélène.', en: "Claire... I'm sorry. About Hélène." },
-      { s: 'claire', fr: 'Ne dis pas ça. Tu es parti sans dire au revoir. À elle. À moi.', en: "Don't say that. You left without saying goodbye. To her. To me." },
+      { s: 'claire', e: 'shaken', fr: 'Ne dis pas ça. Tu es parti sans dire au revoir. À elle. À moi.', en: "Don't say that. You left without saying goodbye. To her. To me." },
       { s: 'claire', fr: 'Ma sœur et moi, on ne se parlait plus depuis dix ans. Tu ne savais pas, hein ?', en: "My sister and I hadn't spoken for ten years. You didn't know, did you?" },
     ],
     greet: [{ s: 'claire', fr: 'Encore toi.', en: 'You again.' }],
@@ -429,7 +430,7 @@ export const DIALOGUE = {
       {
         id: 'soir', q: 'Où étais-tu hier soir ?', en: 'Where were you last night?',
         lines: [
-          { s: 'claire', fr: "Vous voulez mon [[alibi|alibi]], monsieur l'inspecteur ?", en: 'You want my alibi, inspector?' },
+          { s: 'claire', e: 'hostile', fr: "Vous voulez mon [[alibi|alibi]], monsieur l'inspecteur ?", en: 'You want my alibi, inspector?' },
           { s: 'narr', fr: '« Vous ». Elle a choisi « vous ».', en: '"Vous". She chose "vous".' },
           { s: 'claire', fr: "J'étais à l'école. Je [[corrigeais|was marking]] des cahiers. Seule. Personne ne peut le [[confirmer|confirm]].", en: 'I was at the school. I was marking exercise books. Alone. Nobody can confirm it.', record: 'claire_ecole' },
         ],
@@ -437,7 +438,7 @@ export const DIALOGUE = {
       {
         id: 'pourquoi', q: 'Pourquoi tu ne parlais plus à Hélène ?', en: "Why didn't you speak to Hélène any more?",
         lines: [
-          { s: 'claire', fr: 'Ça ne te [[regarde|concern]] pas. Plus maintenant.', en: "That's none of your business. Not any more." },
+          { s: 'claire', e: 'hostile', fr: 'Ça ne te [[regarde|concern]] pas. Plus maintenant.', en: "That's none of your business. Not any more." },
           { s: 'narr', fr: 'Dix ans de [[silence|silence]]. Et hier soir ?', en: 'Ten years of silence. And last night?' },
         ],
       },
@@ -446,19 +447,19 @@ export const DIALOGUE = {
       echarpe: [
         { s: 'you', fr: 'Cette écharpe était près de la fontaine.', en: 'This scarf was near the fountain.' },
         { s: 'claire', fr: '...', en: '...' },
-        { s: 'claire', fr: "Elle est à moi. Mais je l'ai [[perdue|lost]] la semaine dernière.", en: 'It is mine. But I lost it last week.', record: 'claire_echarpe' },
-        { s: 'claire', fr: 'Tu te souviens ? Tu me l\'as offerte. Avant de partir.', en: 'Do you remember? You gave it to me. Before you left.' },
+        { s: 'claire', e: 'shaken', fr: "Elle est à moi. Mais je l'ai [[perdue|lost]] la semaine dernière.", en: 'It is mine. But I lost it last week.', record: 'claire_echarpe' },
+        { s: 'claire', e: 'shaken', fr: 'Tu te souviens ? Tu me l\'as offerte. Avant de partir.', en: 'Do you remember? You gave it to me. Before you left.' },
         { s: 'narr', fr: 'Elle [[ment|is lying]] sur quelque chose. Ou elle a peur.', en: "She's lying about something. Or she's afraid." },
       ],
     },
-    wrong: [{ s: 'claire', fr: "Je n'ai rien à te dire.", en: 'I have nothing to say to you.' }],
+    wrong: [{ s: 'claire', e: 'hostile', fr: "Je n'ai rien à te dire.", en: 'I have nothing to say to you.' }],
   },
 
   roux: {
     first: [
       { s: 'roux', fr: 'Julien ! Mon petit Julien ! Viens ici, que je te regarde !', en: 'Julien! My little Julien! Come here, let me look at you!' },
       { s: 'roux', fr: "Tu es tout [[maigre|thin]] ! Ils ne te nourrissent pas, à Lyon ? Tiens, un croissant, il est [[chaud|hot]], mange, mange !", en: "You're so thin! Don't they feed you in Lyon? Here, a croissant, it's hot, eat, eat!" },
-      { s: 'roux', fr: "Et la pauvre Hélène, mon Dieu... Ici, les [[nouvelles|news]] vont plus vite que le bus de Garnier, tu sais !", en: "And poor Hélène, my God... Here, news travels faster than Garnier's bus, you know!" },
+      { s: 'roux', e: 'shaken', fr: "Et la pauvre Hélène, mon Dieu... Ici, les [[nouvelles|news]] vont plus vite que le bus de Garnier, tu sais !", en: "And poor Hélène, my God... Here, news travels faster than Garnier's bus, you know!" },
     ],
     greet: [{ s: 'roux', fr: 'Encore toi ! Tu as mangé ton croissant, au moins ?', en: 'You again! Did you at least eat your croissant?' }],
     topics: [
@@ -473,7 +474,7 @@ export const DIALOGUE = {
         id: 'victime', q: 'Tu connaissais bien Hélène ?', en: 'Did you know Hélène well?',
         lines: [
           { s: 'roux', fr: "Elle m'a [[prêté|lent]] de l'argent l'année dernière, pour le four. Je ne l'ai pas encore [[rendu|paid back]]...", en: "She lent me money last year, for the oven. I haven't paid it back yet..." , record: 'roux_dette' },
-          { s: 'roux', fr: "Mais je ne l'ai pas [[tuée|killed]], hein ! Je t'ai donné le biberon, petit !", en: "But I didn't kill her, eh! I bottle-fed you, young man!" },
+          { s: 'roux', e: 'hostile', fr: "Mais je ne l'ai pas [[tuée|killed]], hein ! Je t'ai donné le biberon, petit !", en: "But I didn't kill her, eh! I bottle-fed you, young man!" },
         ],
       },
     ],
@@ -505,6 +506,6 @@ export const REPORT = {
   verdict: [
     { max: 0, line: { s: 'dubois', fr: 'Impeccable. Le juge sera content.', en: 'Flawless. The judge will be pleased.' } },
     { max: 2, line: { s: 'dubois', fr: 'Pas mal, pour quelqu\'un de Lyon.', en: 'Not bad, for someone from Lyon.' } },
-    { max: 99, line: { s: 'dubois', fr: 'Le juge va avoir des questions...', en: 'The judge is going to have questions...' } },
+    { max: 99, line: { s: 'dubois', e: 'hostile', fr: 'Le juge va avoir des questions...', en: 'The judge is going to have questions...' } },
   ],
 };

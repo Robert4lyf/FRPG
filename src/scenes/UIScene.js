@@ -189,12 +189,16 @@ export default class UIScene extends Phaser.Scene {
     this.portraitZoom = this.portrait ? 1.5 : 2;
     this.portraitFrame = this.add.graphics();
     this.portraitImg = this.add.image(0, 0, 'portrait_inspector', 0).setOrigin(0).setScale(this.portraitZoom).setVisible(false);
-    this.dlg.add([this.dlgG, this.portraitFrame, this.portraitImg, this.speaker, this.body.container, this.bodyEn, this.hint, this.enBtn.c, this.ttsBtn.c]);
+    // Previous expression, faded out on top when the expression changes.
+    this.portraitFade = this.add.image(0, 0, 'portrait_inspector', 0).setOrigin(0).setScale(this.portraitZoom).setVisible(false);
+    this.portraitExpr = 0;
+    this.dlg.add([this.dlgG, this.portraitFrame, this.portraitImg, this.portraitFade, this.speaker, this.body.container, this.bodyEn, this.hint, this.enBtn.c, this.ttsBtn.c]);
     const blink = () => {
       this.time.delayedCall(2400 + Math.random() * 3200, () => {
-        if (this.portraitImg.visible) {
+        // Only the neutral face has a blink frame.
+        if (this.portraitImg.visible && this.portraitExpr === 0) {
           this.portraitImg.setFrame(1);
-          this.time.delayedCall(130, () => this.portraitImg.setFrame(0));
+          this.time.delayedCall(130, () => { if (this.portraitExpr === 0) this.portraitImg.setFrame(0); });
         }
         blink();
       });
@@ -240,12 +244,16 @@ export default class UIScene extends Phaser.Scene {
     if (this.options.length) this.arrangeOptions();
   }
 
-  // Shows the speaker's portrait (if they have one); returns the x where text should start.
-  showPortrait(id, top) {
+  // Shows the speaker's portrait (if they have one) with an expression; returns the x where
+  // text should start. Expressions: neutral (frame 0), hostile (2), shaken (3).
+  showPortrait(id, top, expr) {
     const key = `portrait_${id}`;
+    const frame = { hostile: 2, shaken: 3 }[expr] || 0;
     this.portraitFrame.clear();
+    this.portraitFade.setVisible(false);
     if (!id || !this.textures.exists(key)) {
       this.portraitImg.setVisible(false);
+      this.portraitKey = null;
       return PAD;
     }
     const size = 96 * this.portraitZoom;
@@ -253,8 +261,15 @@ export default class UIScene extends Phaser.Scene {
     const y = top + 16;
     this.portraitFrame.fillStyle(0x161a2c, 1).fillRect(x, y, size, size);
     this.portraitFrame.lineStyle(1, 0xd9d2c3, 0.5).strokeRect(x - 1.5, y - 1.5, size + 3, size + 3);
-    if (this.portraitImg.texture.key !== key) this.portraitImg.setTexture(key, 0);
-    this.portraitImg.setPosition(x, y).setFrame(0).setVisible(true);
+    // Same person changing expression: cross-fade from the old face.
+    if (this.portraitKey === key && this.portraitImg.visible && this.portraitExpr !== frame) {
+      this.tweens.killTweensOf(this.portraitFade);
+      this.portraitFade.setTexture(key, this.portraitExpr).setPosition(x, y).setAlpha(1).setVisible(true);
+      this.tweens.add({ targets: this.portraitFade, alpha: 0, duration: 220, onComplete: () => this.portraitFade.setVisible(false) });
+    }
+    this.portraitImg.setTexture(key, frame).setPosition(x, y).setVisible(true);
+    this.portraitKey = key;
+    this.portraitExpr = frame;
     return x + size + 16;
   }
 
@@ -265,7 +280,7 @@ export default class UIScene extends Phaser.Scene {
     const who = CAST[l.s];
     // Name on the first line, role underneath, so long names never run under the buttons.
     this.speaker.setText(narr ? '' : l.s === 'you' ? 'VOUS' : `${who.name.toUpperCase()}\n${who.role}`);
-    const textX = this.showPortrait(l.s === 'you' ? 'inspector' : l.s, top);
+    const textX = this.showPortrait(l.s === 'you' ? 'inspector' : l.s, top, l.e);
     this.speaker.setX(textX);
     this.body.x = textX;
     this.body.width = this.W - PAD - textX;
@@ -329,6 +344,8 @@ export default class UIScene extends Phaser.Scene {
   menu(title, options) {
     this.clearOptions();
     this.portraitImg.setVisible(false);
+    this.portraitFade.setVisible(false);
+    this.portraitKey = null;
     this.portraitFrame.clear();
     this.speaker.setX(PAD);
     this.body.clear();

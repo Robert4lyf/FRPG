@@ -42,6 +42,7 @@ Chapter scripts live in `src/story/`. Each line is:
 ```
 
 - `[[word|gloss]]` marks a vocabulary word (gold, tappable, added to the Carnet).
+- `e: 'hostile'` or `e: 'shaken'` sets the speaker's portrait expression for that line (neutral otherwise). Keep them for key moments.
 - `record` adds a witness statement to the notebook; `set` sets a story flag.
 - Questions can `require` flags, clues or statements. `evidence` maps a clue/statement id to the reaction when it's presented.
 - French dialogue should be reviewed by a native speaker before release.
