@@ -2,7 +2,7 @@ import { CLUES, STATEMENTS } from './chapter1.js';
 
 // Case progress: flags, clues found, statements recorded, words met, topics asked.
 // Saved to the browser after every change.
-const KEY = 'frpg.case.v1';
+const KEY = 'frpg.case.v2'; // v2: prologue and new story (old saves start fresh)
 
 export default class GameState {
   constructor() {

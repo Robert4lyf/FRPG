@@ -1,5 +1,6 @@
 import {
   CAST, CLUES, STATEMENTS, DIALOGUE, INTRO, OUTRO, OBJECTIVES, CHAPTER, REPORT,
+  PROLOGUE, PROLOGUE_DIALOGUE, NIGHT, MEMORIES,
 } from '../story/chapter1.js';
 import { speech } from '../learning/speech.js';
 import {
@@ -175,7 +176,7 @@ export default class UIScene extends Phaser.Scene {
     const { W } = this;
     this.dlg = this.add.container(0, 0).setDepth(100).setVisible(false);
     this.dlgG = this.add.graphics();
-    this.speaker = text(this, PAD, 0, '', 16, C.name, { fontFamily: FONT_TITLE });
+    this.speaker = text(this, PAD, 0, '', 15, C.name, { fontFamily: FONT_TITLE, lineSpacing: -2 });
     this.body = new RichText(this, PAD, 0, W - PAD * 2, {
       size: 21, onWord: (fr, en, obj) => this.wordTip(fr, en, obj),
     });
@@ -207,7 +208,7 @@ export default class UIScene extends Phaser.Scene {
     this.top = top;
     this.dlgG.clear();
     drawPanel(this.dlgG, 10, top, W - 20, h);
-    this.speaker.setPosition(PAD, top + 18);
+    this.speaker.setPosition(PAD, top + 13);
     this.enBtn.c.setPosition(W - PAD - 56, top + 12);
     this.ttsBtn.c.setPosition(W - PAD - 56 - 64, top + 12);
     this.hint.setPosition(W - PAD, top + h - 14);
@@ -262,7 +263,8 @@ export default class UIScene extends Phaser.Scene {
     const top = this.layoutPanel(this.linePanelH());
     const narr = l.s === 'narr';
     const who = CAST[l.s];
-    this.speaker.setText(narr ? '' : l.s === 'you' ? 'VOUS' : `${who.name.toUpperCase()} · ${who.role}`);
+    // Name on the first line, role underneath, so long names never run under the buttons.
+    this.speaker.setText(narr ? '' : l.s === 'you' ? 'VOUS' : `${who.name.toUpperCase()}\n${who.role}`);
     const textX = this.showPortrait(l.s === 'you' ? 'inspector' : l.s, top);
     this.speaker.setX(textX);
     this.body.x = textX;
@@ -359,14 +361,22 @@ export default class UIScene extends Phaser.Scene {
   // ---------- interrogation and examination ----------
 
   async interrogate(id) {
-    const d = DIALOGUE[id];
+    const prologue = this.world.phase === 'prologue';
+    const d = prologue ? PROLOGUE_DIALOGUE[id] : DIALOGUE[id];
+    const metKey = prologue ? `met_${id}_p` : `met_${id}`;
     const g = this.state;
     this.openDialogue();
-    if (!g.has(`met_${id}`)) {
+    if (!g.has(metKey)) {
       await this.playLines(d.first);
-      g.set(`met_${id}`);
+      g.set(metKey);
     } else {
       await this.playLines(d.greet);
+    }
+    // Scripted scenes with nothing to ask (Hélène, Théo in the prologue) end here.
+    if (!d.topics.length && !d.evidence) {
+      this.closeDialogue();
+      if (prologue && g.has('prologue_done') && !g.has('night_seen')) await this.night();
+      return;
     }
 
     for (;;) {
@@ -375,7 +385,7 @@ export default class UIScene extends Phaser.Scene {
         const asked = g.wasAsked(id, t.id);
         return { label: `${asked ? '✓ ' : '› '}${t.q}`, en: `${asked ? '✓ ' : '› '}${t.en}`, dim: asked, value: { type: 'topic', t } };
       });
-      if (g.evidence().length) options.push({ label: '◆ Présenter une preuve', en: '◆ Present evidence', value: { type: 'evidence' } });
+      if (!prologue && g.evidence().length) options.push({ label: '◆ Présenter une preuve', en: '◆ Present evidence', value: { type: 'evidence' } });
       options.push({ label: '✕ Partir', en: '✕ Leave', value: { type: 'leave' } });
 
       const pick = await this.menu(`${CAST[id].name.toUpperCase()} · ${CAST[id].role}`, options);
@@ -397,6 +407,13 @@ export default class UIScene extends Phaser.Scene {
         await this.playLines(reaction || d.wrong);
       }
     }
+    this.closeDialogue();
+  }
+
+  // A place that brings back a memory.
+  async recall(id) {
+    this.openDialogue();
+    await this.playLines(MEMORIES[id].lines);
     this.closeDialogue();
   }
 
@@ -637,8 +654,13 @@ export default class UIScene extends Phaser.Scene {
 
   async begin() {
     if (!this.state.has('intro_seen')) {
-      await this.card(INTRO, CHAPTER.title.toUpperCase(), CHAPTER.titleEn);
+      await this.card(INTRO, PROLOGUE.title.toUpperCase(), PROLOGUE.titleEn);
       this.state.set('intro_seen');
+    }
+    // Resume if the game was closed after the prologue but before the night card finished.
+    if (this.state.has('prologue_done') && !this.state.has('night_seen')) {
+      await this.night();
+      return;
     }
     // Resume if the game was closed between the reveal and the end of the report.
     if (this.state.has('chapter1_done') && !this.state.has('report_done')) {
@@ -648,6 +670,14 @@ export default class UIScene extends Phaser.Scene {
       await this.outro();
     }
     this.world.busy = false;
+  }
+
+  // The night of the murder, then the morning: rebuild the town for chapter 1.
+  async night() {
+    await this.card(NIGHT, CHAPTER.title.toUpperCase(), CHAPTER.titleEn);
+    this.state.set('night_seen');
+    this.scene.get('World').scene.restart();
+    this.scene.restart();
   }
 
   // Dubois asks for the report; the player types it up; Dubois gives a verdict.

@@ -146,7 +146,7 @@ function makeTextures(scene) {
 }
 
 // OY: rows of rooftop above the street (see world/town.js).
-export function buildShopDressing(scene, OY) {
+export function buildShopDressing(scene, OY, { crime = true } = {}) {
   makeTextures(scene);
   const at = (x, y) => [x * TILE, (y + OY) * TILE];
 
@@ -171,10 +171,12 @@ export function buildShopDressing(scene, OY) {
   const [cx, cy] = at(44, 4);
   const cross = scene.add.image(cx + 8, cy + 7, 'pharmacross').setDepth(4.6);
   // Closed since the murder: a card in the window and tape across the door (door tile 45, row 5).
-  const [fx, fy] = at(41, 5);
-  scene.add.image(fx + 24, fy + 1, 'ferme').setOrigin(0.5, 0).setDepth(4.7);
-  const [dx, dy] = at(45, 5);
-  scene.add.image(dx + 8, dy + 1, 'tape').setOrigin(0.5, 0).setDepth(4.8);
+  if (crime) {
+    const [fx, fy] = at(41, 5);
+    scene.add.image(fx + 24, fy + 1, 'ferme').setOrigin(0.5, 0).setDepth(4.7);
+    const [dx, dy] = at(45, 5);
+    scene.add.image(dx + 8, dy + 1, 'tape').setOrigin(0.5, 0).setDepth(4.8);
+  }
   return { cross };
 }
 

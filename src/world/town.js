@@ -28,7 +28,8 @@ export const SIGNS = [
   { x: 21.5, y: 24.4, text: 'ARRÊT DE BUS' },
 ];
 
-export function buildTown() {
+// crime: false for the prologue (the evening before the murder): no police, tape or floodlight.
+export function buildTown({ crime = true } = {}) {
   const layer = () => new Array(MAP_W * MAP_H).fill(-1);
   const L = { ground: layer(), grass: layer(), water: layer(), building: layer(), facade: layer(), object: layer(), overhead: layer() };
   const inBounds = (x, y) => x >= 0 && y >= 0 && x < MAP_W && y < MAP_H;
@@ -128,17 +129,18 @@ export function buildTown() {
   [19, 28].forEach((x) => { set('object', x, 11, T.bench); lamp(x, 14); });
   set('object', 18, 15, T.bin);
 
-  // Crime scene: police barriers and a floodlight on the south side of the fountain
-  set('object', 20, 17, T.barrier[0]); set('object', 27, 17, T.barrier[1]);
-  // Police floodlight on a tripod, left of the body, aimed at the chalk outline.
-  props.push({ kind: 'floodlight', x: 20, y: 15 });
   // Café terrace tables and chalkboards (drawn in fx/shops.js) block their tiles.
   SHOP_BLOCKS.forEach(([x, y]) => props.push({ kind: 'block', x, y }));
   // Pharmacie: a flickering green cross on the wall, its glow on the pavement.
   light(44.5, 6.2, 34, 'neon', [{ x: 44.5, y: 4.45, r: 5 }]);
-  // Police car parked beside the scene (two tiles wide).
-  props.push({ kind: 'policecar', x: 15, y: 17 }, { kind: 'block', x: 16, y: 17 });
-  light(23, 14.7, 58, 'flood', [{ x: 20.5 + 5 / 16, y: 15 - 6 / 16, r: 6 }]);
+  if (crime) {
+    // Crime scene: police barriers, a floodlight on a tripod aimed at the body,
+    // and a police car parked beside it (two tiles wide).
+    set('object', 20, 17, T.barrier[0]); set('object', 27, 17, T.barrier[1]);
+    props.push({ kind: 'floodlight', x: 20, y: 15 });
+    props.push({ kind: 'policecar', x: 15, y: 17 }, { kind: 'block', x: 16, y: 17 });
+    light(23, 14.7, 58, 'flood', [{ x: 20.5 + 5 / 16, y: 15 - 6 / 16, r: 6 }]);
+  }
 
   // Park (east) with pond, trees and benches
   nine('grass', 31, 9, 16, 16, T.grass9);

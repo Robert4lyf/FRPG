@@ -1,8 +1,8 @@
 # Belleville — un polar en français
 
-A film-noir murder mystery played in French. You're a junior inspector sent from Lyon to a small town where the pharmacist has been found dead in the fountain. Everyone says it was an accident. Everyone is lying about something.
+A film-noir murder mystery played in French. You are Julien Morel, an inspector in Lyon who hasn't been home to Belleville for fifteen years. Then a letter arrives from Hélène, your childhood friend: *"Reviens. J'ai peur."* You see her alive for one evening. The next morning she is dead in the fountain, and the town you left is full of people who knew you, and who are all hiding something.
 
-The French is the game, not a lesson: you understand the dialogue to catch lies, connect clues and move the case forward. Aimed at players with school-level French (around GCSE). Built with HTML/JS and [Phaser 3](https://phaser.io), with no build step.
+The French is the game, not a lesson: you understand the dialogue to catch lies, connect clues and move the case forward. Old friends call you *tu*; people who resent you insist on *vous*, and when someone switches, it means something. Aimed at players with school-level French (around GCSE). Built with HTML/JS and [Phaser 3](https://phaser.io), with no build step.
 
 ## Play
 
@@ -27,7 +27,8 @@ Each chapter's grammar is what the investigation needs:
 
 | Chapter | Story | Grammar |
 |---|---|---|
-| 1. L'arrivée (done) | The scene, first statements, the first lie, the post-mortem | Present, passé composé |
+| Prologue (done) | The letter, the last evening with Hélène | Present, passé composé |
+| 1. Trop tard (done) | The scene, old friends and old grudges, the first lie, the post-mortem | Present, passé composé, a little imparfait |
 | 2. La nuit du crime | Rebuilding the night, breaking alibis | Imparfait vs passé composé |
 | 3. Les secrets | Letters, the victim's diary, a second death | Plus-que-parfait, pronouns, *qui/que/dont* |
 | 4. La vérité | Hypotheses and the accusation | Conditionnel, subjonctif |

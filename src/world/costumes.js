@@ -44,6 +44,11 @@ export const COSTUMES = {
     base: 5,
     map: { ff7143: '8f2a2a', c77b47: '2c2c34', a9673b: '1f1f26', aaa8bd: '3a3a44' },
   },
+  // Hélène: white pharmacist's coat, dark green trousers.
+  helene: {
+    base: 1,
+    map: { c2504d: 'ece8df', a54240: 'c3bdb2', a09cca: '3e5a3e', '7a77a4': '2f452f' },
+  },
   // Baker: cream apron over brown.
   roux: {
     base: 1,

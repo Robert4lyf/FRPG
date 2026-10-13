@@ -1,6 +1,6 @@
 import { buildTown, MAP_W, MAP_H, OY, SIGNS } from '../world/town.js';
 import { castFrame } from '../world/costumes.js';
-import { CAST, CLUES, CHAPTER } from '../story/chapter1.js';
+import { CAST, CLUES, CHAPTER, PROLOGUE, MEMORIES } from '../story/chapter1.js';
 import { NightLighting, gradeCamera } from '../fx/noir.js';
 import { buildWetStreets, buildPoliceCar } from '../fx/street.js';
 import { buildShopDressing } from '../fx/shops.js';
@@ -29,15 +29,20 @@ export default class WorldScene extends Phaser.Scene {
     this.path = null;
     this.pending = null;
     this.state = this.registry.get('state');
+    // The prologue is the evening before the murder; chapter 1 is the morning after.
+    this.phase = this.state.has('prologue_done') ? 'ch1' : 'prologue';
+    this.crime = this.phase === 'ch1';
 
     this.buildMap();
-    this.buildCrimeScene();
+    if (this.crime) this.buildCrimeScene();
     this.buildFountain();
-    buildShopDressing(this, OY);
+    buildShopDressing(this, OY, { crime: this.crime });
     this.buildCharacters();
     this.buildProps();
     this.buildClues();
+    this.buildMemories();
     this.buildLabels();
+    this.buildHabits();
 
     const cam = this.cameras.main;
     cam.setZoom(ZOOM).setBounds(0, 0, MAP_W * TILE, MAP_H * TILE).setRoundPixels(true);
@@ -55,7 +60,7 @@ export default class WorldScene extends Phaser.Scene {
   // ---------- setup ----------
 
   buildMap() {
-    this.town = buildTown();
+    this.town = buildTown({ crime: this.crime });
     const map = this.make.tilemap({ tileWidth: TILE, tileHeight: TILE, width: MAP_W, height: MAP_H });
     const tiles = map.addTilesetImage('urban', 'urban', TILE, TILE, 0, 0);
     this.layers = {};
@@ -221,7 +226,7 @@ export default class WorldScene extends Phaser.Scene {
   }
 
   buildCharacters() {
-    const start = CHAPTER.playerStart;
+    const start = this.crime ? CHAPTER.playerStart : PROLOGUE.playerStart;
     this.player = this.physics.add.sprite(centre(start.x), centre(start.y + OY), 'cast', castFrame(PLAYER_COSTUME, 'up', 0));
     this.player.body.setSize(10, 6).setOffset(3, 10);
     this.player.setCollideWorldBounds(true);
@@ -229,7 +234,8 @@ export default class WorldScene extends Phaser.Scene {
     this.player.dir = 'up';
     SOLID_LAYERS.forEach((n) => this.physics.add.collider(this.player, this.layers[n]));
 
-    this.people = Object.entries(CAST).map(([id, c]) => {
+    const here = ([id, c]) => c.phases.includes(this.phase) && !(id === 'helene' && this.state.has('met_helene'));
+    this.people = Object.entries(CAST).filter(here).map(([id, c]) => {
       const s = this.physics.add.sprite(centre(c.x), centre(c.y + OY), 'cast', castFrame(id, 'down', 0));
       s.body.setSize(12, 8).setOffset(2, 8).setImmovable(true);
       Object.assign(s, { kind: 'person', id, info: c, tx: c.x, ty: c.y + OY });
@@ -248,7 +254,7 @@ export default class WorldScene extends Phaser.Scene {
   }
 
   buildClues() {
-    this.clueSprites = Object.entries(CLUES).map(([id, c]) => {
+    this.clueSprites = !this.crime ? [] : Object.entries(CLUES).map(([id, c]) => {
       const s = this.add.image(centre(c.x), centre(c.y + OY) + 2, 'glint').setDepth(2070);
       Object.assign(s, { kind: 'clue', id, info: c, tx: c.x, ty: c.y + OY });
       s.marker = this.add.image(s.x, s.y + 2, 'marker').setDepth(2.6).setVisible(false);
@@ -266,6 +272,55 @@ export default class WorldScene extends Phaser.Scene {
     });
   }
 
+  // Memory spots: a pale blue shimmer where a place brings back the past (chapter 1 only).
+  buildMemories() {
+    this.memorySprites = !this.crime ? [] : Object.entries(MEMORIES)
+      .filter(([id]) => !this.state.has(`mem_${id}`))
+      .map(([id, m]) => {
+        const s = this.add.image(centre(m.x), centre(m.y + OY) + 2, 'glint').setDepth(2070).setTint(0x9fc4ff);
+        Object.assign(s, { kind: 'memory', id, info: m, tx: m.x, ty: m.y + OY });
+        this.tweens.add({ targets: s, alpha: { from: 0.1, to: 0.7 }, yoyo: true, repeat: -1, duration: 1400, delay: Math.random() * 900 });
+        return s;
+      });
+  }
+
+  // Small habits that make people recognisable at a glance.
+  buildHabits() {
+    const person = (id) => this.people.find((p) => p.id === id);
+    const dubois = person('dubois');
+    if (dubois) {
+      // A cigarette: the tip brightens on each drag, and smoke drifts up into the rain.
+      const tip = this.add.image(dubois.x + 4, dubois.y - 3, 'light').setScale(4 / 128).setTint(0xff9a3a)
+        .setBlendMode(Phaser.BlendModes.ADD).setDepth(2071);
+      this.tweens.add({ targets: tip, alpha: { from: 0.35, to: 1 }, scale: { from: 3 / 128, to: 6 / 128 }, yoyo: true, repeat: -1, duration: 900, repeatDelay: 2200 });
+      this.add.particles(dubois.x + 5, dubois.y - 5, 'splash', {
+        speedY: { min: -9, max: -5 }, speedX: { min: -2, max: 3 }, lifespan: 2400, frequency: 700,
+        scale: { start: 0.4, end: 1.6 }, alpha: { start: 0.35, end: 0 }, tint: 0xb9bccc,
+      }).setDepth(2072);
+    }
+    const roux = person('roux');
+    if (roux) {
+      // Brushing flour off her apron now and then.
+      const flour = this.add.particles(roux.x, roux.y + 3, 'splash', {
+        speedY: { min: 2, max: 10 }, speedX: { min: -8, max: 8 }, lifespan: 700, quantity: 6,
+        scale: { start: 0.5, end: 0.2 }, alpha: { start: 0.8, end: 0 }, tint: 0xf3ead8, emitting: false,
+      }).setDepth(11);
+      this.time.addEvent({ delay: 4200, loop: true, callback: () => flour.explode(6) });
+    }
+    const theo = person('theo');
+    if (theo) {
+      // Wiping the terrace table: a few quick turns left and right.
+      this.time.addEvent({
+        delay: 3600, loop: true, callback: () => {
+          if (theo === this.talkingTo || !theo.active) return;
+          ['left', 'right', 'left', 'down'].forEach((d, i) => this.time.delayedCall(i * 220, () => {
+            if (theo.active && theo !== this.talkingTo) theo.setFrame(castFrame('theo', d, i % 2 ? 1 : 0));
+          }));
+        },
+      });
+    }
+  }
+
   // Text drawn at 3x and scaled down stays crisp under the 3x camera zoom.
   label(x, y, str, style = {}) {
     return this.add.text(x, y, str, {
@@ -277,9 +332,12 @@ export default class WorldScene extends Phaser.Scene {
     SIGNS.forEach((s) => this.label(s.x * TILE, (s.y + OY) * TILE + 1, s.text, {
       fontSize: '19px', color: '#d9cfb8', backgroundColor: '#0b0b0ecc', padding: { x: 6, y: 2 },
     }).setAlpha(0.8));
-    this.tags = this.people.map((s) => this.label(s.x, s.y - 8, s.info.name, {
-      fontSize: '18px', color: '#c7b38c', stroke: '#000000', strokeThickness: 5,
-    }).setAlpha(0.85));
+    this.tags = this.people.map((s) => {
+      s.tag = this.label(s.x, s.y - 8, s.info.name, {
+        fontSize: '18px', color: '#c7b38c', stroke: '#000000', strokeThickness: 5,
+      }).setAlpha(0.85);
+      return s.tag;
+    });
     this.indicator = this.label(0, 0, '', {
       fontSize: '34px', color: '#e8c547', stroke: '#000000', strokeThickness: 6,
     }).setVisible(false);
@@ -293,7 +351,7 @@ export default class WorldScene extends Phaser.Scene {
   }
 
   interactables() {
-    return [...this.people, ...this.clueSprites.filter((s) => s.visible)];
+    return [...this.people, ...this.clueSprites.filter((s) => s.visible), ...this.memorySprites.filter((s) => s.visible)];
   }
 
   onTap(p) {
@@ -317,6 +375,52 @@ export default class WorldScene extends Phaser.Scene {
 
   walkable(x, y) {
     return !this.town.isSolid(x, y) && !this.people.some((s) => s.tx === x && s.ty === y);
+  }
+
+  // Breadth-first path between tiles (for scripted walks by other characters).
+  findPath(sx, sy, gx, gy) {
+    const key = (x, y) => y * MAP_W + x;
+    const prev = new Map([[key(sx, sy), null]]);
+    const queue = [[sx, sy]];
+    let found = null;
+    while (queue.length && !found) {
+      const [x, y] = queue.shift();
+      if (x === gx && y === gy) { found = [x, y]; break; }
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (!prev.has(key(nx, ny)) && !this.town.isSolid(nx, ny)) {
+          prev.set(key(nx, ny), [x, y]);
+          queue.push([nx, ny]);
+        }
+      }
+    }
+    const path = [];
+    for (let c = found; c; c = prev.get(key(c[0], c[1]))) path.unshift(c);
+    return path;
+  }
+
+  // A character walks off along a path to (gx, gy) street tiles and disappears.
+  walkAway(s, gx, gy) {
+    this.people = this.people.filter((p) => p !== s);
+    s.body.enable = false;
+    const path = this.findPath(s.tx, s.ty, gx, gy + OY).slice(1);
+    const step = () => {
+      const next = path.shift();
+      if (!next) {
+        this.tweens.add({ targets: [s, s.tag], alpha: 0, duration: 600, onComplete: () => { s.tag?.destroy(); s.destroy(); } });
+        return;
+      }
+      const nx = centre(next[0]);
+      const ny = centre(next[1]);
+      s.anims.play(`${s.id}-${dirOf(nx - s.x, ny - s.y)}`, true);
+      this.tweens.add({
+        targets: s, x: nx, y: ny, duration: 260,
+        onUpdate: () => { s.tag?.setPosition(s.x, s.y - 8); s.setDepth(10 + s.y / 1000); },
+        onComplete: step,
+      });
+    };
+    step();
   }
 
   walkTo(gx, gy, target = null) {
@@ -392,6 +496,11 @@ export default class WorldScene extends Phaser.Scene {
       s.setFrame(castFrame(s.id, OPPOSITE[dir], 0));
       await ui.interrogate(s.id);
       this.talkingTo = null;
+      if (s.id === 'helene' && this.state.has('met_helene')) this.walkAway(s, 45, 6);
+    } else if (s.kind === 'memory') {
+      await ui.recall(s.id);
+      this.state.set(`mem_${s.id}`);
+      s.setVisible(false);
     } else {
       await ui.examine(s.id);
       this.refreshClues();
