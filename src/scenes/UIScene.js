@@ -32,7 +32,10 @@ export default class UIScene extends Phaser.Scene {
     let soundOn = true;
     try { soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; } catch { /* ignore */ }
 
-    this.audio = this.sound.context ? new NoirAudio(this.sound) : null;
+    // One audio engine for the whole game (made on the title screen), so nothing doubles up.
+    if (!this.registry.get('audio') && this.sound.context) this.registry.set('audio', new NoirAudio(this.sound));
+    this.audio = this.registry.get('audio');
+    this.audio?.setTheme(phaseOf(this.state));
     this.weather = new Weather(this, this.audio);
 
     this.buildHud();
@@ -581,12 +584,14 @@ export default class UIScene extends Phaser.Scene {
       c.add(b.c);
     });
     const close = makeButton(this, W - PAD - 120, 28, 120, 40, 'Fermer', () => this.closeCarnet(), { size: 16 });
-    const restart = makeButton(this, W - PAD - 120 - 10 - 150, 28, 150, 40, 'Recommencer', () => {
-      if (restart.armed) { g.reset(); window.location.reload(); return; }
-      restart.armed = true;
-      restart.setLabel('Sûr ?');
+    // Back to the title screen (progress is saved); new game and chapters are there.
+    const menu = makeButton(this, W - PAD - 120 - 10 - 110, 28, 110, 40, 'Menu', () => {
+      this.closeCarnet();
+      this.audio?.setCafe(0);
+      this.scene.stop('World');
+      this.scene.start('Title');
     }, { size: 15 });
-    c.add([close.c, restart.c]);
+    c.add([close.c, menu.c]);
 
     const block = (lines) => (w) => {
       const cont = this.add.container(0, 0);

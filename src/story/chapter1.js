@@ -381,7 +381,7 @@ export const DIALOGUE = {
     first: [
       { s: 'delacroix', fr: 'Monsieur Morel. Quelle [[surprise|surprise]]. Vous étiez un enfant... [[difficile|difficult]].', en: 'Mr Morel. What a surprise. You were a... difficult child.' },
       { s: 'delacroix', fr: "C'est une tragédie, naturellement. Mais c'est un accident. Le brigadier est d'accord.", en: "It's a tragedy, naturally. But it's an accident. The sergeant agrees." },
-      { s: 'delacroix', fr: 'La [[fête|festival]] de la Toussaint est demain. Je ne veux pas de [[scandale|scandal]]. Vous comprenez, je vous en prie ?', en: "The All Saints' festival is tomorrow. I don't want a scandal. You do understand, I trust?" },
+      { s: 'delacroix', fr: 'La [[fête|festival]] de la Toussaint est demain. Je ne veux pas de [[scandale|scandal]]. Vous comprenez, j\'espère ?', en: "The All Saints' festival is tomorrow. I don't want a scandal. You do understand, I trust?" },
     ],
     greet: [{ s: 'delacroix', fr: "J'ai énormément de travail, monsieur Morel.", en: 'I have an enormous amount of work, Mr Morel.' }],
     topics: [
@@ -425,7 +425,7 @@ export const DIALOGUE = {
       { s: 'claire', e: 'shaken', fr: 'Ne dis pas ça. Tu es parti sans dire au revoir. À elle. À moi.', en: "Don't say that. You left without saying goodbye. To her. To me." },
       { s: 'claire', fr: 'Ma sœur et moi, on ne se parlait plus depuis dix ans. Tu ne savais pas, hein ?', en: "My sister and I hadn't spoken for ten years. You didn't know, did you?" },
     ],
-    greet: [{ s: 'claire', fr: 'Encore toi.', en: 'You again.' }],
+    greet: [{ s: 'claire', e: 'hostile', fr: 'Encore vous.', en: 'You again.' }],
     topics: [
       {
         id: 'soir', q: 'Où étais-tu hier soir ?', en: 'Where were you last night?',
@@ -438,7 +438,7 @@ export const DIALOGUE = {
       {
         id: 'pourquoi', q: 'Pourquoi tu ne parlais plus à Hélène ?', en: "Why didn't you speak to Hélène any more?",
         lines: [
-          { s: 'claire', e: 'hostile', fr: 'Ça ne te [[regarde|concern]] pas. Plus maintenant.', en: "That's none of your business. Not any more." },
+          { s: 'claire', e: 'hostile', fr: 'Ça ne vous [[regarde|concern]] pas. Plus maintenant.', en: "That's none of your business. Not any more." },
           { s: 'narr', fr: 'Dix ans de [[silence|silence]]. Et hier soir ?', en: 'Ten years of silence. And last night?' },
         ],
       },
@@ -448,11 +448,11 @@ export const DIALOGUE = {
         { s: 'you', fr: 'Cette écharpe était près de la fontaine.', en: 'This scarf was near the fountain.' },
         { s: 'claire', fr: '...', en: '...' },
         { s: 'claire', e: 'shaken', fr: "Elle est à moi. Mais je l'ai [[perdue|lost]] la semaine dernière.", en: 'It is mine. But I lost it last week.', record: 'claire_echarpe' },
-        { s: 'claire', e: 'shaken', fr: 'Tu te souviens ? Tu me l\'as offerte. Avant de partir.', en: 'Do you remember? You gave it to me. Before you left.' },
+        { s: 'claire', e: 'shaken', fr: 'Vous vous souvenez ? Vous me l\'avez offerte. Avant de partir.', en: 'Do you remember? You gave it to me. Before you left.' },
         { s: 'narr', fr: 'Elle [[ment|is lying]] sur quelque chose. Ou elle a peur.', en: "She's lying about something. Or she's afraid." },
       ],
     },
-    wrong: [{ s: 'claire', e: 'hostile', fr: "Je n'ai rien à te dire.", en: 'I have nothing to say to you.' }],
+    wrong: [{ s: 'claire', e: 'hostile', fr: "Je n'ai rien à vous dire.", en: 'I have nothing to say to you.' }],
   },
 
   roux: {
@@ -489,7 +489,7 @@ export const REPORT = {
   title: 'RAPPORT D\'ENQUÊTE',
   case: 'Affaire : Hélène Marchand — le 31 octobre',
   intro: [
-    { s: 'dubois', fr: 'Le [[juge|judge]] veut un [[rapport|report]] ce soir. Écrivez-le, Julien.', en: 'The judge wants a report tonight. Write it, Julien.' },
+    { s: 'dubois', fr: 'La [[juge|judge]] veut un [[rapport|report]] ce soir. Écrivez-le, Julien.', en: 'The judge wants a report tonight. Write it, Julien.' },
   ],
   lines: [
     { fr: 'La victime, Hélène Marchand, était {}.', en: 'The victim, Hélène Marchand, was a pharmacist.', options: ['pharmacienne', 'boulangère', 'serveuse'], answer: 0 },
@@ -504,8 +504,8 @@ export const REPORT = {
   conclusion: { fr: 'Conclusion : ce n\'est pas un accident. C\'est un meurtre.', en: "Conclusion: it isn't an accident. It's a murder." },
   stamp: 'MEURTRE',
   verdict: [
-    { max: 0, line: { s: 'dubois', fr: 'Impeccable. Le juge sera content.', en: 'Flawless. The judge will be pleased.' } },
+    { max: 0, line: { s: 'dubois', fr: 'Impeccable. La juge sera contente.', en: 'Flawless. The judge will be pleased.' } },
     { max: 2, line: { s: 'dubois', fr: 'Pas mal, pour quelqu\'un de Lyon.', en: 'Not bad, for someone from Lyon.' } },
-    { max: 99, line: { s: 'dubois', e: 'hostile', fr: 'Le juge va avoir des questions...', en: 'The judge is going to have questions...' } },
+    { max: 99, line: { s: 'dubois', e: 'hostile', fr: 'La juge va avoir des questions...', en: 'The judge is going to have questions...' } },
   ],
 };

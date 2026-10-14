@@ -52,8 +52,7 @@ export default class BootScene extends Phaser.Scene {
     });
     makeFxTextures(this);
     this.registry.set('state', new GameState());
-    this.scene.start('World');
-    this.scene.launch('UI');
+    this.scene.start('Title');
   }
 
   // Same 'cast' frame numbering as the Kenney set, filled from the LPC sheets.

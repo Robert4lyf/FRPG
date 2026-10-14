@@ -12,6 +12,7 @@ https://robert4lyf.github.io/FRPG/
 - **Move:** arrow keys / WASD, or tap where you want to go.
 - **Talk / examine:** tap a person or a glinting clue, or press Space next to it.
 - **Questioning:** pick a question, or **Présenter une preuve** to confront someone with a clue or another witness's statement.
+- **Title screen:** Continuer, Nouvelle partie, and Chapitres to replay any chapter you've reached. **Menu** in the Carnet goes back to it.
 - **Help with French:** tap any gold word for its meaning and pronunciation. Tap **EN** to see the English for a line. Tap the objective box for English too.
 - **Carnet (notebook):** clues, witness statements, every vocabulary word you've met, and (from chapter 2) the timeline of the night, where statements that can't both be true show in red. Key: C.
 - **Le rapport:** each chapter ends with you typing up the case report, filling blanks from French options. Mistakes cost nothing but are saved as words to bring back in later chapters.
@@ -30,7 +31,7 @@ Each chapter's grammar is what the investigation needs:
 | Prologue (done) | The letter, the last evening with Hélène | Present, passé composé |
 | 1. Trop tard (done) | The scene, old friends and old grudges, the first lie, the post-mortem | Present, passé composé, a little imparfait |
 | 2. La nuit du crime (done) | Toussaint evening: rebuilding the night on a timeline, breaking alibis, the cemetery | Imparfait vs passé composé |
-| 3. Les secrets | Letters, the victim's diary, a second death | Plus-que-parfait, pronouns, *qui/que/dont* |
+| 3. Les secrets (outline) | Hélène's diary, the ambiguous "G.", a second death | Plus-que-parfait, pronouns, *qui/que/dont* |
 | 4. La vérité | Hypotheses and the accusation | Conditionnel, subjonctif |
 
 ## Writing content
@@ -45,7 +46,7 @@ Chapter scripts live in `src/story/`. Each line is:
 - `e: 'hostile'` or `e: 'shaken'` sets the speaker's portrait expression for that line (neutral otherwise). Keep them for key moments.
 - `record` adds a witness statement to the notebook; `set` sets a story flag.
 - Questions can `require` flags, clues or statements. `evidence` maps a clue/statement id to the reaction when it's presented.
-- French dialogue should be reviewed by a native speaker before release.
+- French dialogue was reviewed (see `docs/french-review.md`); a human native speaker should still check it before release.
 
 ## Layout
 

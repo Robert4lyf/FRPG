@@ -128,7 +128,7 @@ export const MEMORIES2 = {
 export const INTRO2 = [
   { s: 'narr', fr: 'Le 1er novembre. La [[Toussaint|All Saints\' Day]].', en: "1 November. All Saints' Day." },
   { s: 'narr', fr: 'En France, ce jour-là, on pose des [[fleurs|flowers]] sur les tombes de nos morts.', en: 'In France, on that day, people put flowers on the graves of their dead.' },
-  { s: 'narr', fr: "À Belleville, le maire a gardé sa fête. Des [[lanternes|lanterns]] sur la place, comme si de rien n'était.", en: 'In Belleville, the mayor kept his festival. Lanterns in the square, as if nothing had happened.' },
+  { s: 'narr', fr: "À Belleville, le maire a [[maintenu|kept on]] sa fête. Des [[lanternes|lanterns]] sur la place, comme si de rien n'était.", en: 'In Belleville, the mayor kept his festival. Lanterns in the square, as if nothing had happened.' },
   { s: 'narr', fr: "Moi, je ne pensais qu'à une chose : la nuit du crime.", en: 'I could only think about one thing: the night of the crime.' },
   { s: 'narr', fr: "Entre vingt-trois heures et minuit, qui était sur la place ? Et qui [[mentait|was lying]] ?", en: 'Between eleven and midnight, who was in the square? And who was lying?' },
 ];
@@ -151,7 +151,7 @@ export const OBJECTIVES2 = [
   { fr: "Vérifiez l'alibi du maire.", en: "Check the mayor's alibi.", done: has('maire_confessed') },
   { fr: "Fouillez l'appartement d'Hélène, au-dessus de la pharmacie.", en: "Search Hélène's flat, above the pharmacy.", done: has('enveloppe', 'chemise') },
   { fr: "Allez au cimetière, à l'est du parc.", en: 'Go to the cemetery, east of the park.', done: has('tombe', 'chrysanthemes') },
-  { fr: 'Montrez ce que vous avez trouvé chez Hélène à Dubois.', en: "Show Dubois what you found at Hélène's.", done: has('dubois_dossier') },
+  { fr: 'Montrez à Dubois ce que vous avez trouvé chez Hélène.', en: "Show Dubois what you found at Hélène's.", done: has('dubois_dossier') },
   { fr: 'Qui était sur la place au moment du cri ?', en: 'Who was in the square when the scream came?', done: has('lebrun_bus', 'garnier_parti') },
   { fr: 'Retournez voir Dubois.', en: 'Go back to Dubois.', done: has('ch2_done') },
   { fr: 'Écrivez la chronologie.', en: 'Write the timeline.', done: has('ch2_report_done') },
@@ -175,7 +175,7 @@ export const DIALOGUE2 = {
     greet: [{ s: 'dubois', fr: 'Alors, cette chronologie ?', en: 'So, this timeline?' }],
     topics: [
       {
-        id: 'fete', q: 'Pourquoi le maire a gardé la fête ?', en: 'Why did the mayor keep the festival?',
+        id: 'fete', q: 'Pourquoi le maire a maintenu la fête ?', en: 'Why did the mayor keep the festival?',
         lines: [
           { s: 'dubois', fr: "Pour les [[touristes|tourists]]. Pour l'argent. Pour faire comme si tout allait bien.", en: 'For the tourists. For the money. To act as if everything was fine.' },
           { s: 'narr', fr: 'Les lanternes brillaient sur la place. Hélène était morte depuis un jour.', en: 'The lanterns were shining in the square. Hélène had been dead for a day.' },
@@ -258,18 +258,18 @@ export const DIALOGUE2 = {
   claire: {
     first: [
       { s: 'narr', fr: 'Claire est debout devant une [[tombe|grave]]. Elle ne se retourne pas.', en: "Claire is standing in front of a grave. She doesn't turn round." },
-      { s: 'claire', e: 'hostile', fr: 'Tu me [[suis|follow]], maintenant ?', en: 'You follow me now?' },
+      { s: 'claire', e: 'hostile', fr: 'Vous me [[suivez|follow]], maintenant ?', en: 'You follow me now?' },
       { s: 'you', fr: 'Je cherche la vérité, Claire.', en: "I'm looking for the truth, Claire." },
-      { s: 'claire', fr: "C'est mon père. Pierre Marchand. Tu te souviens de lui ?", en: 'This is my father. Pierre Marchand. Do you remember him?' },
+      { s: 'claire', fr: "C'est mon père. Pierre Marchand. Vous vous souvenez de lui ?", en: 'This is my father. Pierre Marchand. Do you remember him?' },
       { s: 'you', fr: 'Il réparait nos vélos.', en: 'He used to fix our bikes.' },
       { s: 'claire', e: 'shaken', fr: 'Oui. Il réparait tout.', en: 'Yes. He used to fix everything.' },
     ],
-    greet: [{ s: 'claire', fr: 'Encore toi.', en: 'You again.' }],
+    greet: [{ s: 'claire', fr: 'Julien.', en: 'Julien.' }],
     topics: [
       {
         id: 'soir', q: 'Où étais-tu le 30 octobre, à 23 h ?', en: 'Where were you on 30 October at 11 pm?',
         lines: [
-          { s: 'claire', e: 'hostile', fr: "Je te l'ai dit. À l'école. Je [[corrigeais|was marking]] des cahiers.", en: 'I told you. At the school. I was marking exercise books.' },
+          { s: 'claire', e: 'hostile', fr: "Je vous l'ai dit. À l'école. Je [[corrigeais|was marking]] des cahiers.", en: 'I told you. At the school. I was marking exercise books.' },
           { s: 'narr', fr: 'Elle regarde la tombe, pas moi.', en: 'She looks at the grave, not at me.' },
         ],
       },
@@ -278,7 +278,7 @@ export const DIALOGUE2 = {
         lines: [
           { s: 'claire', fr: 'Sur la route de Lyon. Il rentrait à vélo. Il pleuvait.', en: 'On the Lyon road. He was cycling home. It was raining.' },
           { s: 'claire', fr: "Une voiture ne s'est pas arrêtée. Dubois n'a jamais trouvé personne.", en: "A car didn't stop. Dubois never found anyone." },
-          { s: 'claire', e: 'hostile', fr: 'Et toi, tu es parti un mois après. Sans un mot.', en: 'And you left a month later. Without a word.' },
+          { s: 'claire', e: 'hostile', fr: 'Et vous, vous êtes parti un mois après. Sans un mot.', en: 'And you left a month later. Without a word.' },
         ],
       },
       {
@@ -314,7 +314,7 @@ export const DIALOGUE2 = {
         { s: 'claire', e: 'hostile', fr: '« Pardon »... Qui ose écrire ça à mon père ?', en: '"Forgive me"... Who dares write that to my father?' },
       ],
     },
-    wrong: [{ s: 'claire', e: 'hostile', fr: 'Ça ne te regarde pas.', en: 'That is none of your business.' }],
+    wrong: [{ s: 'claire', e: 'hostile', fr: 'Ça ne vous regarde pas.', en: 'That is none of your business.' }],
   },
 
   delacroix: {
@@ -382,7 +382,7 @@ export const DIALOGUE2 = {
   theo: {
     first: [
       { s: 'theo', fr: 'Julien. Viens, je te sers un café. Tu as une tête de [[fantôme|ghost]].', en: 'Julien. Come, I\'ll get you a coffee. You look like a ghost.' },
-      { s: 'theo', fr: "Tout le monde fait la fête. Moi, je n'ai pas [[envie|the heart]].", en: "Everyone's celebrating. I don't have the heart." },
+      { s: 'theo', fr: "Tout le monde fait la fête. Moi, j'ai pas le [[cœur|heart]] à ça.", en: "Everyone's celebrating. I don't have the heart." },
     ],
     greet: [{ s: 'theo', fr: 'Encore un café ?', en: 'Another coffee?' }],
     topics: [
@@ -415,7 +415,7 @@ export const DIALOGUE2 = {
 
   lebrun: {
     first: [
-      { s: 'lebrun', e: 'shaken', fr: 'Jeune Morel. Je vous dois des [[excuses|apologies]]. Pour hier.', en: 'Young Morel. I owe you an apology. For yesterday.' },
+      { s: 'lebrun', e: 'shaken', fr: 'Le petit Morel. Je vous dois des [[excuses|apologies]]. Pour hier.', en: 'Young Morel. I owe you an apology. For yesterday.' },
       { s: 'lebrun', fr: "Je ne dors plus. Je vois Hélène dans l'eau, chaque nuit.", en: "I don't sleep any more. I see Hélène in the water, every night." },
     ],
     greet: [{ s: 'lebrun', fr: 'Oui ?', en: 'Yes?' }],
@@ -451,7 +451,7 @@ export const DIALOGUE2 = {
     first: [
       { s: 'garnier', fr: 'Ah, mon garçon. Triste Toussaint, hein ?', en: "Ah, my boy. A sad All Saints', eh?" },
       { s: 'garnier', fr: "J'ai posé des fleurs pour Hélène, à la fontaine. Elle prenait mon bus depuis vingt ans.", en: 'I put flowers down for Hélène, at the fountain. She had taken my bus for twenty years.' },
-      { s: 'narr', fr: "Il a les yeux rouges. À cause du froid, ou il a pleuré.", en: "His eyes are red. From the cold, or he's been crying." },
+      { s: 'narr', fr: "Il a les yeux rouges. À cause du froid. Ou parce qu'il a pleuré.", en: "His eyes are red. From the cold, or he's been crying." },
     ],
     greet: [{ s: 'garnier', fr: 'Après la pluie, le beau temps. Un jour.', en: 'After the rain comes sunshine. One day.' }],
     topics: [
@@ -497,10 +497,10 @@ export const REPORT2 = {
   ],
   lines: [
     { fr: 'À 23 h, il {} très fort.', en: 'At 23:00, it was raining very hard.', options: ['pleuvait', 'a plu', 'pleut'], answer: 0 },
-    { fr: 'À 23 h, Théo {} le café.', en: 'At 23:00, Théo closed the café.', options: ['fermait', 'a fermé', 'ferme'], answer: 1 },
+    { fr: 'À 23 h, Théo {} le café, puis il a fait le ménage.', en: 'At 23:00, Théo closed the café, then he did the cleaning.', options: ['fermait', 'a fermé', 'ferme'], answer: 1 },
     { fr: 'À 23 h 15, Claire {} Hélène à la fontaine.', en: 'At 23:15, Claire met Hélène at the fountain.', options: ['retrouve', 'retrouvait', 'a retrouvé'], answer: 2 },
-    { fr: 'Les deux sœurs se {} quand Lebrun est arrivé.', en: 'The two sisters were arguing when Lebrun arrived.', options: ['disputaient', 'sont disputées', 'disputent'], answer: 0 },
-    { fr: 'À 23 h 35, Claire {}.', en: 'At 23:35, Claire left.', options: ['partait', 'est partie', 'part'], answer: 1 },
+    { fr: 'Les deux sœurs se {} depuis un quart d\'heure quand Lebrun est arrivé.', en: 'The two sisters had been arguing for a quarter of an hour when Lebrun arrived.', options: ['disputaient', 'sont disputées', 'disputent'], answer: 0 },
+    { fr: 'À 23 h 35, Claire {} et elle n\'est pas revenue.', en: "At 23:35, Claire left and she didn't come back.", options: ['partait', 'est partie', 'part'], answer: 1 },
     { fr: 'Au moment du cri, le bus {} encore sur la place.', en: 'When the scream came, the bus was still in the square.', options: ['a été', 'est', 'était'], answer: 2 },
     { fr: "À 23 h 40, quelqu'un {} Hélène à la tête.", en: 'At 23:40, someone struck Hélène on the head.', options: ['a frappé', 'frappait', 'frappe'], answer: 0 },
     { fr: 'Le maire {} chez lui à minuit.', en: 'The mayor came home at midnight.', options: ['rentrait', 'est rentré', 'rentre'], answer: 1 },

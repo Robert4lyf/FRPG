@@ -37,6 +37,25 @@ export default class GameState {
     if (save) this.save();
   }
 
+  // Replay from the start of a chapter: progress as it stood when that chapter began.
+  // Words met and review words are kept.
+  startAt(phase) {
+    const START = {
+      prologue: { flags: [], clues: [], statements: [] },
+      ch1: { flags: ['intro_seen', 'met_helene', 'met_helene_p', 'met_garnier_p', 'met_theo_p', 'prologue_done'], clues: [], statements: [] },
+      ch2: {
+        flags: ['intro_seen', 'met_helene', 'prologue_done', 'night_seen', 'lebrun_confessed', 'chapter1_done', 'report_done', 'outro_seen'],
+        clues: ['montre', 'sac', 'echarpe', 'boue'],
+        statements: ['theo_cri', 'theo_lettre', 'garnier_vu', 'lebrun_maison', 'lebrun_dispute', 'maire_parc', 'maire_alibi', 'claire_ecole', 'claire_echarpe', 'roux_dette'],
+      },
+    }[phase];
+    this.flags = new Set(START.flags);
+    this.clues = [...START.clues];
+    this.statements = [...START.statements];
+    this.asked = new Set();
+    this.save();
+  }
+
   save() {
     try {
       localStorage.setItem(KEY, JSON.stringify({

@@ -1,6 +1,7 @@
 import BootScene from './scenes/BootScene.js';
 import WorldScene from './scenes/WorldScene.js';
 import UIScene from './scenes/UIScene.js';
+import TitleScene from './scenes/TitleScene.js';
 
 // Measure the visible area (not window.innerHeight, which can include the address bar).
 const container = document.getElementById('game');
@@ -34,7 +35,7 @@ window.game = new Phaser.Game({
   backgroundColor: '#000000',
   physics: { default: 'arcade', arcade: { debug: false, fixedStep: false } }, // real elapsed time: same walking speed at any frame rate
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [BootScene, WorldScene, UIScene],
+  scene: [BootScene, TitleScene, WorldScene, UIScene],
 });
 
 // The layout is chosen for portrait or landscape when the game starts. If the phone is

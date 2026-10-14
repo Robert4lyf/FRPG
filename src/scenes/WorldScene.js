@@ -632,6 +632,13 @@ export default class WorldScene extends Phaser.Scene {
     p.setDepth(10 + p.y / 1000);
     this.lighting.update(dt);
     this.checkPerformance(dt);
+    // Café murmur: louder the closer you are to its door.
+    const audio = this.registry.get('audio');
+    if (audio && (this.cafeTick = (this.cafeTick || 0) + dt) > 250) {
+      this.cafeTick = 0;
+      const d = Phaser.Math.Distance.Between(p.x, p.y, 15.5 * TILE, (5.5 + OY) * TILE);
+      audio.setCafe(Math.max(0, 1 - d / 150) ** 1.5);
+    }
     this.lastX = this.prevX;
     this.lastY = this.prevY;
     this.prevX = p.x;
