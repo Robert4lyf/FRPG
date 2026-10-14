@@ -86,17 +86,23 @@ export async function runCutscene(ui, shots, title, subtitle) {
     layer.add(img);
     const cover = Math.max(W / iw, H / ih);
     const { from, to } = shot.move;
-    const apply = (t) => {
-      const z = from.zoom + (to.zoom - from.zoom) * t;
-      const fx = from.x + (to.x - from.x) * t;
-      const fy = from.y + (to.y - from.y) * t;
-      const s = cover * z;
+    // Where the image sits at the start and end: focus point centred, but never past the
+    // image's edges. The move is a straight line between the two, so the camera makes one
+    // smooth movement (clamping along the way would make it turn mid-shot).
+    const place = ({ x: fx, y: fy, zoom }) => {
+      const s = cover * zoom;
       const dw = iw * s; const dh = ih * s;
-      // Keep the focus point centred, but never show past the image's edges.
-      const x = Phaser.Math.Clamp(W / 2 - (fx - 0.5) * dw, W - dw / 2, dw / 2);
-      const y = Phaser.Math.Clamp(H / 2 - (fy - 0.5) * dh, H - dh / 2, dh / 2);
-      img.setScale(s).setPosition(x, y);
+      return {
+        s,
+        x: Phaser.Math.Clamp(W / 2 - (fx - 0.5) * dw, W - dw / 2, dw / 2),
+        y: Phaser.Math.Clamp(H / 2 - (fy - 0.5) * dh, H - dh / 2, dh / 2),
+      };
     };
+    const a = place(from);
+    const b = place(to);
+    // Position and scale both change linearly, so if both ends cover the screen, every
+    // point in between does too.
+    const apply = (t) => img.setScale(a.s + (b.s - a.s) * t).setPosition(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
     apply(0);
     const prog = { t: 0 };
     const move = ui.tweens.add({
