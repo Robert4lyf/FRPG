@@ -10,6 +10,7 @@ Enable GitHub Pages (Settings → Pages → Deploy from branch → `main` / root
 https://robert4lyf.github.io/FRPG/
 
 - **Move:** arrow keys / WASD, or tap where you want to go.
+- **Go inside:** the café, bakery, mairie, school, gendarmerie and (once you have the keys) Hélène's flat have interiors. Tap a door (▲) to go in, the doormat (▼) to leave.
 - **Talk / examine:** tap a person or a glinting clue, or press Space next to it.
 - **Questioning:** pick a question, or **Présenter une preuve** to confront someone with a clue or another witness's statement.
 - **Title screen:** Continuer, Nouvelle partie, and Chapitres to replay any chapter you've reached. **Menu** in the Carnet goes back to it.
@@ -59,7 +60,7 @@ src/scenes/WorldScene.js town, characters, clues, tap-to-walk pathfinding
 src/scenes/UIScene.js    dialogue, interrogation, evidence, Carnet, title cards
 src/ui/theme.js          noir UI kit and tappable-word text renderer
 src/fx/noir.js           night lighting, colour grading, rain, grain, lightning, rain/thunder audio
-src/world/               town layout and tile reference
+src/world/               town layout, interiors (rooms.js) and tile reference
 src/learning/speech.js   French pronunciation (browser text-to-speech)
 ```
 

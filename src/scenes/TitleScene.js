@@ -135,6 +135,9 @@ export default class TitleScene extends Phaser.Scene {
   play() {
     if (this.leaving) return;
     this.leaving = true;
+    this.registry.set('room', 'town');
+    this.registry.set('spawn', null);
+    this.audio?.setIndoor?.(false);
     this.cameras.main.fadeOut(600, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('World');

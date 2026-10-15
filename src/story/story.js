@@ -16,6 +16,13 @@ Object.entries({ ...C1.CAST, ...C2.CAST2, ...C3.CAST3 }).forEach(([id, c]) => {
   CAST[id] = { name: c.name, role: c.role, at };
 });
 
+// Earlier chapters' scenes that now happen indoors.
+const INDOORS1 = {
+  theo: { prologue: { x: 3, y: 3, room: 'cafe' } },
+  claire: { ch1: { x: 7, y: 2, room: 'ecole' } },
+};
+Object.entries(INDOORS1).forEach(([id, by]) => Object.assign(CAST[id].at, by));
+
 // Where a person stands in a phase, given the story so far (null: not there).
 // A phase's entry is either {x, y} or a list of options with `if` / `unless` flags.
 export function placeOf(id, phase, state) {

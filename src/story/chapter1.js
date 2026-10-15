@@ -100,7 +100,7 @@ export const MEMORIES = {
     ],
   },
   ecole: {
-    name: "L'école", x: 37, y: 8,
+    name: "L'école", x: 4, y: 6, room: 'ecole',
     lines: [
       { s: 'narr', fr: "Mon ancienne école. Claire s'asseyait devant moi.", en: 'My old school. Claire used to sit in front of me.' },
       { s: 'narr', fr: 'Elle ne se retournait jamais. Presque jamais.', en: 'She never turned round. Almost never.' },

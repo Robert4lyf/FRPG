@@ -79,8 +79,9 @@ export function gradeCamera(cam) {
 // Night: a dark layer over the world with soft holes cut by lamps, windows,
 // the crime-scene floodlight, and small lights carried by people.
 export class NightLighting {
-  constructor(scene, width, height, lights) {
+  constructor(scene, width, height, lights, { ambient = 0.62 } = {}) {
     this.scene = scene;
+    this.ambient = ambient;
     this.cam = scene.cameras.main;
     // Only the visible area (plus a margin) is redrawn each frame, not the whole map.
     this.margin = 48;
@@ -141,7 +142,7 @@ export class NightLighting {
     const oy = Math.floor(this.cam.scrollY + (this.cam.height - this.cam.height / this.cam.zoom) / 2) - this.margin;
     rt.setPosition(ox, oy);
     rt.clear();
-    rt.fill(0x0b1838, 0.62);
+    rt.fill(0x0b1838, this.ambient);
     const visible = (x, y, r) => x + r > ox && x - r < ox + this.vw && y + r > oy && y - r < oy + this.vh;
     this.lights.forEach((l, i) => {
       let a = 1;
@@ -174,7 +175,7 @@ export class Weather {
     const { width: W, height: H } = scene.scale;
 
     const speed = 1000;
-    scene.add.particles(0, 0, 'raindrop', {
+    this.rain = scene.add.particles(0, 0, 'raindrop', {
       x: { min: -W * 0.25, max: W * 1.1 },
       y: -30,
       lifespan: ((H + 80) / speed) * 1000,
@@ -209,6 +210,11 @@ export class Weather {
     });
     s.time.delayedCall(900 + Math.random() * 1200, () => this.audio?.thunder());
     this.scheduleLightning();
+  }
+
+  // Indoors: no rain falling on the screen (lightning still shows through the windows).
+  setIndoor(on) {
+    this.rain?.setVisible(!on);
   }
 
   update() {
@@ -257,8 +263,19 @@ export class NoirAudio {
     const gain = ctx.createGain();
     gain.gain.value = 0.0;
     gain.gain.linearRampToValueAtTime(0.09, ctx.currentTime + 4);
+    this.rainGain = gain;
+    this.rainLp = lp;
     src.connect(hp).connect(lp).connect(gain).connect(this.switch);
     src.start();
+  }
+
+  // Indoors the rain is muffled: quieter and duller, as if through the walls.
+  setIndoor(on) {
+    if (!this.rainGain) return;
+    const t = this.ctx.currentTime;
+    this.rainGain.gain.cancelScheduledValues(t);
+    this.rainGain.gain.setTargetAtTime(on ? 0.035 : 0.09, t, 0.3);
+    this.rainLp.frequency.setTargetAtTime(on ? 700 : 3800, t, 0.3);
   }
 
   setMuted(m) {

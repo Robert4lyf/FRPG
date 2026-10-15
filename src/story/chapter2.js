@@ -24,7 +24,7 @@ export const CAST2 = {
 // Where everyone stands on the evening of the festival (street tiles).
 export const PLACES2 = {
   dubois: { x: 23, y: 16 },
-  theo: { x: 15, y: 7 },
+  theo: { x: 3, y: 3, room: 'cafe' },
   roux: { x: 6, y: 13 },
   delacroix: { x: 24, y: 7 },
   mmedelacroix: { x: 28, y: 9 },
@@ -35,7 +35,7 @@ export const PLACES2 = {
 
 export const CLUES2 = {
   enveloppe: {
-    name: "L'enveloppe de Lyon", en: 'The envelope from Lyon', x: 45, y: 6, requires: ['claire_keys'],
+    name: "L'enveloppe de Lyon", en: 'The envelope from Lyon', x: 5, y: 4, room: 'appart', requires: ['claire_keys'],
     note: { fr: 'Une enveloppe déchirée. « Laboratoire de toxicologie, Lyon ». La lettre a disparu.', en: 'A torn envelope. "Toxicology laboratory, Lyon". The letter has gone.' },
     lines: [
       { s: 'narr', fr: "J'ouvre la porte avec les [[clés|keys]] de Claire. L'appartement sent le café froid.", en: "I open the door with Claire's keys. The flat smells of cold coffee." },
@@ -45,7 +45,7 @@ export const CLUES2 = {
     ],
   },
   chemise: {
-    name: 'La chemise vide', en: 'The empty folder', x: 46, y: 6, requires: ['claire_keys'],
+    name: 'La chemise vide', en: 'The empty folder', x: 6, y: 5, room: 'appart', requires: ['claire_keys'],
     note: { fr: 'Une chemise en carton : « P. Marchand — 2011 ». Vide.', en: 'A cardboard folder: "P. Marchand — 2011". Empty.' },
     lines: [
       { s: 'narr', fr: "Par terre, une [[chemise|folder]] en carton. Dessus, l'écriture d'Hélène : « P. Marchand — 2011 ».", en: 'On the floor, a cardboard folder. On it, in Hélène\'s writing: "P. Marchand — 2011".' },

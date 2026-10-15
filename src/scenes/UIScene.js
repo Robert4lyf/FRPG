@@ -38,6 +38,7 @@ export default class UIScene extends Phaser.Scene {
     this.audio = this.registry.get('audio');
     this.audio?.setTheme(phaseOf(this.state));
     this.weather = new Weather(this, this.audio);
+    this.weather.setIndoor(!!this.world.indoors);
 
     this.buildHud();
     this.buildDialogue();
@@ -465,6 +466,20 @@ export default class UIScene extends Phaser.Scene {
     this.world.busy = false;
   }
 
+  // A few lines outside any conversation (e.g. a locked door).
+  async sayLines(lines) {
+    this.openDialogue();
+    await this.playLines(lines);
+    this.closeDialogue();
+  }
+
+  // Back to the town map (a chapter change or a cutscene always resumes outside).
+  toTown() {
+    this.registry.set('room', 'town');
+    this.registry.set('spawn', null);
+    this.registry.set('roomEntered', false);
+  }
+
   // A place that brings back a memory. Some (going back to the café to sleep) move the
   // story on: they set a flag and play a cutscene, then the town is rebuilt.
   async recall(id) {
@@ -476,6 +491,7 @@ export default class UIScene extends Phaser.Scene {
     if (m.set) this.state.set(m.set);
     if (m.cut) {
       await runCutscene(this, CUTSCENES[m.cut]);
+      this.toTown();
       this.scene.get('World').scene.restart();
       this.scene.restart();
     }
@@ -625,6 +641,7 @@ export default class UIScene extends Phaser.Scene {
     const menu = makeButton(this, W - PAD - 120 - 10 - 110, 28, 110, 40, 'Menu', () => {
       this.closeCarnet();
       this.audio?.setCafe(0);
+      this.toTown();
       this.scene.stop('World');
       this.scene.start('Title');
     }, { size: 15 });
@@ -779,6 +796,7 @@ export default class UIScene extends Phaser.Scene {
   async night() {
     await runCutscene(this, CUTSCENES.ch1, CHAPTERS.ch1.title.toUpperCase(), CHAPTERS.ch1.titleEn);
     this.state.set('night_seen');
+    this.toTown();
     this.scene.get('World').scene.restart();
     this.scene.restart();
   }
@@ -817,6 +835,7 @@ export default class UIScene extends Phaser.Scene {
     const next = CHAPTERS[id];
     await runCutscene(this, CUTSCENES[id], next.title.toUpperCase(), next.titleEn);
     this.state.set(next.flags.start);
+    this.toTown();
     this.scene.get('World').scene.restart();
     this.scene.restart();
   }

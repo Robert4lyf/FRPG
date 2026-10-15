@@ -26,14 +26,14 @@ export const CAST3 = {
 // Placement can depend on flags: the first entry whose `if` flags are all set and whose
 // `unless` flag isn't set is used; none means the person isn't there.
 export const PLACES3 = {
-  vasseur: [{ x: 12, y: 9 }],
-  dubois: [{ x: 40, y: 21, if: ['lebrun_mort'] }, { x: 23, y: 16 }],
+  vasseur: [{ x: 12, y: 5, room: 'cafe' }],
+  dubois: [{ x: 4, y: 2, room: 'gendarmerie' }],
   lebrun: [{ x: 36, y: 12, unless: 'lebrun_mort' }],
-  theo: [{ x: 15, y: 7 }],
-  roux: [{ x: 6, y: 13 }],
-  claire: [{ x: 25, y: 15, if: ['lebrun_mort'] }, { x: 35, y: 7 }],
+  theo: [{ x: 3, y: 3, room: 'cafe' }],
+  roux: [{ x: 4, y: 2, room: 'boulangerie' }],
+  claire: [{ x: 25, y: 15, if: ['lebrun_mort'] }, { x: 7, y: 2, room: 'ecole' }],
   garnier: [{ x: 17, y: 26 }],
-  delacroix: [{ x: 24, y: 7 }],
+  delacroix: [{ x: 5, y: 2, room: 'mairie' }],
   mmedelacroix: [{ x: 28, y: 9 }],
 };
 
@@ -56,7 +56,7 @@ export const CLUES3 = {
     ],
   },
   etiquettes: {
-    name: 'Les étiquettes de la boulangerie', en: "The bakery's price labels", x: 5, y: 7, requires: ['pierre_note'],
+    name: 'Les étiquettes de la boulangerie', en: "The bakery's price labels", x: 2, y: 4, room: 'boulangerie', requires: ['pierre_note'],
     note: { fr: 'Une écriture ronde, en minuscules. Rien à voir avec le papier.', en: 'Round handwriting, in small letters. Nothing like the note.' },
     lines: [
       { s: 'narr', fr: "Les [[étiquettes|labels]] de Mme Roux : « baguette », « pain de campagne ». Une écriture ronde, en [[minuscules|small letters]].", en: "Mme Roux's labels: \"baguette\", \"country loaf\". Round handwriting, in small letters." },
@@ -164,9 +164,9 @@ export const MEMORIES3 = {
     ],
   },
   dormir: {
-    name: 'Rentrer au café', x: 15, y: 6, requires: ['journal_ordre', 'mme_voiture'], cut: 'ch3_nuit', set: 'lebrun_mort',
+    name: 'Monter dormir', x: 13, y: 3, room: 'cafe', requires: ['journal_ordre', 'mme_voiture'], cut: 'ch3_nuit', set: 'lebrun_mort',
     lines: [
-      { s: 'narr', fr: "Il est tard. Le [[brouillard|fog]] monte de l'étang. Je rentre.", en: "It's late. The fog is rising from the pond. I go back in." },
+      { s: 'narr', fr: "Il est tard. Le [[brouillard|fog]] monte de l'étang. Je monte me [[coucher|go to bed]].", en: "It's late. The fog is rising from the pond. I go up to bed." },
       { s: 'narr', fr: "Demain, je trouverai qui est « G. ».", en: 'Tomorrow, I will find out who "G." is.' },
     ],
   },
@@ -199,16 +199,16 @@ const has = (...ids) => (g) => ids.every((id) => g.has(id));
 const count = (...ids) => (g) => `${ids.filter((id) => g.has(id)).length}/${ids.length}`;
 
 export const OBJECTIVES3 = [
-  { fr: 'Parlez à la juge Vasseur, devant le café.', en: 'Talk to Judge Vasseur, outside the café.', done: has('met3_vasseur') },
+  { fr: 'Parlez à la juge Vasseur, au café.', en: 'Talk to Judge Vasseur, in the café.', done: has('met3_vasseur') },
   { fr: 'Examinez le papier de la pierre, devant le café.', en: 'Examine the note from the stone, outside the café.', done: has('pierre_note') },
   { fr: "Comparez l'écriture : le café, la boulangerie, l'arrêt de bus.", en: 'Compare the handwriting: the café, the bakery, the bus stop.', done: has('ardoise', 'etiquettes', 'horaire'), count: count('ardoise', 'etiquettes', 'horaire') },
   { fr: 'Où Hélène cachait-elle ses trésors ?', en: 'Where did Hélène hide her treasures?', done: has('journal') },
   { fr: 'Retrouvez les pages arrachées. Qui les a ?', en: 'Find the torn-out pages. Who has them?', done: has('page_roux', 'page_claire'), count: count('page_roux', 'page_claire') },
   { fr: 'Remettez les pages du journal dans l\'ordre.', en: 'Put the diary pages back in order.', done: has('journal_ordre') },
   { fr: 'Qui est « G. » ? Parlez à Mme Delacroix.', en: 'Who is "G."? Talk to Mme Delacroix.', done: has('mme_voiture') },
-  { fr: 'Il est tard. Rentrez au café.', en: "It's late. Go back to the café.", done: has('lebrun_mort') },
+  { fr: 'Il est tard. Montez dormir, au café.', en: "It's late. Go up to bed, at the café.", done: has('lebrun_mort') },
   { fr: "Allez à l'étang.", en: 'Go to the pond.', done: has('lebrun_note') },
-  { fr: 'Faites parler Dubois.', en: 'Make Dubois talk.', done: has('dubois_aveu') },
+  { fr: 'Faites parler Dubois, à la gendarmerie.', en: 'Make Dubois talk, at the gendarmerie.', done: has('dubois_aveu') },
   { fr: 'Regardez le bus de Garnier de plus près.', en: "Take a closer look at Garnier's bus.", done: has('parechoc') },
   { fr: 'Claire vous attend à la fontaine.', en: 'Claire is waiting for you at the fountain.', done: has('photo') },
   { fr: 'Retournez voir la juge.', en: 'Go back to the judge.', done: has('ch3_done') },

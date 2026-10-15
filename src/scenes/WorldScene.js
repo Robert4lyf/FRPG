@@ -1,4 +1,5 @@
 import { buildTown, MAP_W, MAP_H, OY, SIGNS } from '../world/town.js';
+import { buildRoom, ROOMS, TOWN_DOORS } from '../world/rooms.js';
 import { castFrame } from '../world/costumes.js';
 import { SPRITES, bodyBox } from '../world/sprites.js';
 import { CAST, CLUES, chapterOf, phaseOf, placeOf } from '../story/story.js';
@@ -36,29 +37,51 @@ export default class WorldScene extends Phaser.Scene {
     this.chapter = chapterOf(this.phase);
     this.crime = !!this.chapter.crimeScene;
     this.festival = !!this.chapter.festival;
+    // Town, or one of the interiors (entered through a door; see world/rooms.js).
+    this.room = ROOMS[this.registry.get('room')] ? this.registry.get('room') : 'town';
+    this.indoors = this.room !== 'town';
+    this.spawn = this.registry.get('spawn');
+    this.registry.set('spawn', null);
 
-    this.buildMap();
-    if (this.crime) this.buildCrimeScene();
-    if (this.chapter.fog) this.buildFog();
-    this.buildFountain();
-    buildShopDressing(this, OY, { crime: this.phase !== 'prologue' });
-    this.buildCemetery();
-    if (this.festival) this.buildFestival();
-    if (this.chapter.bus) this.buildBus();
+    if (this.indoors) {
+      this.buildInterior();
+    } else {
+      this.mw = MAP_W; this.mh = MAP_H; this.oy = OY;
+      this.buildMap();
+      if (this.crime) this.buildCrimeScene();
+      if (this.chapter.fog) this.buildFog();
+      this.buildFountain();
+      buildShopDressing(this, OY, { crime: this.phase !== 'prologue' });
+      this.buildCemetery();
+      if (this.festival) this.buildFestival();
+      if (this.chapter.bus) this.buildBus();
+    }
     this.buildCharacters();
     this.buildProps();
     this.buildClues();
     this.buildMemories();
+    this.buildDoors();
     this.buildLabels();
     this.buildHabits();
 
     const cam = this.cameras.main;
-    cam.setZoom(ZOOM).setBounds(0, 0, MAP_W * TILE, MAP_H * TILE).setRoundPixels(true);
+    cam.setZoom(ZOOM).setRoundPixels(true);
+    this.camBounds();
     cam.startFollow(this.player, true, 0.15, 0.15);
     gradeCamera(cam);
 
-    this.lighting = new NightLighting(this, MAP_W * TILE, MAP_H * TILE, this.town.lights);
-    buildWetStreets(this, this.town.lights, this.town.puddles, OY);
+    this.lighting = new NightLighting(this, this.mw * TILE, this.mh * TILE, this.town.lights, { ambient: this.indoors ? 0.42 : 0.62 });
+    if (!this.indoors) buildWetStreets(this, this.town.lights, this.town.puddles, OY);
+
+    // Coming through a door: fade in and hand control straight back (the UI is already running).
+    const ui = this.scene.get('UI');
+    ui?.weather?.setIndoor?.(this.indoors);
+    this.registry.get('audio')?.setIndoor?.(this.indoors);
+    if (this.registry.get('roomEntered')) {
+      this.registry.set('roomEntered', false);
+      cam.fadeIn(350, 0, 0, 0);
+      this.time.delayedCall(350, () => { this.busy = false; });
+    }
 
     this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT');
     ['SPACE', 'E', 'ENTER'].forEach((k) => this.input.keyboard.on(`keydown-${k}`, () => this.tryInteract()));
@@ -86,6 +109,66 @@ export default class WorldScene extends Phaser.Scene {
     });
     SOLID_LAYERS.forEach((n) => this.layers[n].setCollisionByExclusion([-1]));
     this.physics.world.setBounds(0, 0, MAP_W * TILE, MAP_H * TILE);
+  }
+
+  // Camera limits. A room smaller than the screen sits in the middle of it.
+  camBounds(extraH = 0) {
+    const cam = this.cameras.main;
+    const vw = cam.width / ZOOM;
+    const vh = cam.height / ZOOM;
+    const w = this.mw * TILE;
+    const h = this.mh * TILE + extraH;
+    const bw = Math.max(w, vw);
+    const bh = Math.max(h, vh);
+    cam.setBounds((w - bw) / 2, (h - bh) / 2 + (bh > h ? extraH / 2 : 0), bw, bh);
+  }
+
+  // An interior: drawn floor, wall and furniture; solid tiles get static bodies.
+  buildInterior() {
+    const r = buildRoom(this, this.room);
+    this.mw = r.w; this.mh = r.h; this.oy = 0;
+    this.town = { isSolid: r.isSolid, lights: r.lights, props: [], puddles: [] };
+    this.layers = null;
+    this.roomBodies = this.physics.add.staticGroup();
+    r.solid.forEach((k) => {
+      const [x, y] = k.split(',').map(Number);
+      this.roomBodies.create(x * TILE + 8, y * TILE + 8, undefined).setVisible(false).body.setSize(TILE, TILE);
+    });
+    this.physics.world.setBounds(0, 0, r.w * TILE, r.h * TILE);
+  }
+
+  // Doors: in town, the entrances to the interiors; indoors, the way back out.
+  buildDoors() {
+    const list = this.indoors
+      ? ROOMS[this.room].doors.map((d) => ({ x: d.x, y: d.y, room: 'town', spawn: d.to, name: 'Sortir' }))
+      : TOWN_DOORS.map((d) => {
+        const room = ROOMS[d.room];
+        const inside = room.doors[0];
+        return { ...d, spawn: { x: inside.x, y: inside.y - 1 } };
+      });
+    this.doorSprites = list.map((d) => {
+      const s = this.add.zone(centre(d.x), centre(d.y + this.oy), 14, 14);
+      Object.assign(s, { kind: 'door', id: `${d.room}@${d.x},${d.y}`, info: d, tx: d.x, ty: d.y + this.oy, visible: true });
+      return s;
+    });
+  }
+
+  // Through a door: fade out, remember where to appear, rebuild the scene as the other place.
+  useDoor(s) {
+    const d = s.info;
+    if (d.locked && !this.state.has(d.locked)) {
+      return this.scene.get('UI').sayLines([d.lockedLine]);
+    }
+    this.scene.get('UI').sfx('open', 0.25);
+    return new Promise(() => {
+      this.cameras.main.fadeOut(300, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () => {
+        this.registry.set('room', d.room);
+        this.registry.set('spawn', d.spawn);
+        this.registry.set('roomEntered', true);
+        this.scene.restart();
+      });
+    });
   }
 
   // A two-tier stone fountain in the middle of the pool, drawn in the tileset's palette,
@@ -336,7 +419,7 @@ export default class WorldScene extends Phaser.Scene {
       body.body.setSize(12, 8);
     });
     this.physics.add.collider(this.player, this.solidProps);
-    this.physics.add.collider(this.player, this.graveBodies);
+    if (this.graveBodies) this.physics.add.collider(this.player, this.graveBodies);
     if (this.busBody) this.physics.add.collider(this.player, this.busBody);
   }
 
@@ -366,23 +449,28 @@ export default class WorldScene extends Phaser.Scene {
   }
 
   buildCharacters() {
-    const start = this.chapter.playerStart;
-    this.player = this.physics.add.sprite(centre(start.x), centre(start.y + OY), 'cast', castFrame(PLAYER_COSTUME, 'up', 0));
+    const start = this.spawn || this.chapter.playerStart;
+    this.player = this.physics.add.sprite(centre(start.x), centre(start.y + this.oy), 'cast', castFrame(PLAYER_COSTUME, this.spawn && !this.indoors ? 'down' : 'up', 0));
     this.player.setOrigin(0.5, SPRITES.originY);
     { const [w, h, ox, oy] = bodyBox(10, 6); this.player.body.setSize(w, h).setOffset(ox, oy); }
     this.player.setCollideWorldBounds(true);
     this.player.costume = PLAYER_COSTUME;
     this.player.dir = 'up';
-    SOLID_LAYERS.forEach((n) => this.physics.add.collider(this.player, this.layers[n]));
+    if (this.layers) SOLID_LAYERS.forEach((n) => this.physics.add.collider(this.player, this.layers[n]));
+    if (this.roomBodies) this.physics.add.collider(this.player, this.roomBodies);
 
-    const here = ([id]) => placeOf(id, this.phase, this.state) && !(id === 'helene' && this.state.has('met_helene'));
+    const inRoom = (o) => (o.room || 'town') === this.room;
+    const here = ([id]) => {
+      const p = placeOf(id, this.phase, this.state);
+      return p && inRoom(p) && !(id === 'helene' && this.state.has('met_helene'));
+    };
     this.people = Object.entries(CAST).filter(here).map(([id, info]) => {
       const c = { ...info, ...placeOf(id, this.phase, this.state) };
-      const s = this.physics.add.sprite(centre(c.x), centre(c.y + OY), 'cast', castFrame(id, 'down', 0));
+      const s = this.physics.add.sprite(centre(c.x), centre(c.y + this.oy), 'cast', castFrame(id, 'down', 0));
       s.setOrigin(0.5, SPRITES.originY);
       const [w, h, ox, oy] = bodyBox(12, 8);
       s.body.setSize(w, h).setOffset(ox, oy).setImmovable(true);
-      Object.assign(s, { kind: 'person', id, info: c, tx: c.x, ty: c.y + OY });
+      Object.assign(s, { kind: 'person', id, info: c, tx: c.x, ty: c.y + this.oy });
       s.setDepth(10 + s.y / 1000);
       return s;
     });
@@ -392,15 +480,15 @@ export default class WorldScene extends Phaser.Scene {
     this.time.addEvent({
       delay: 2800, loop: true, callback: () => {
         const s = Phaser.Utils.Array.GetRandom(this.people);
-        if (s !== this.talkingTo) s.setFrame(castFrame(s.id, Phaser.Utils.Array.GetRandom(['down', 'down', 'left', 'right']), 0));
+        if (s && s.active && s !== this.talkingTo) s.setFrame(castFrame(s.id, Phaser.Utils.Array.GetRandom(['down', 'down', 'left', 'right']), 0));
       },
     });
   }
 
   buildClues() {
-    this.clueSprites = Object.entries(CLUES).filter(([, c]) => c.phase === this.phase && !c.given).map(([id, c]) => {
-      const s = this.add.image(centre(c.x), centre(c.y + OY) + 2, 'glint').setDepth(2070);
-      Object.assign(s, { kind: 'clue', id, info: c, tx: c.x, ty: c.y + OY });
+    this.clueSprites = Object.entries(CLUES).filter(([, c]) => c.phase === this.phase && !c.given && (c.room || 'town') === this.room).map(([id, c]) => {
+      const s = this.add.image(centre(c.x), centre(c.y + this.oy) + 2, 'glint').setDepth(2070);
+      Object.assign(s, { kind: 'clue', id, info: c, tx: c.x, ty: c.y + this.oy });
       s.marker = this.add.image(s.x, s.y + 2, 'marker').setDepth(2.6).setVisible(false);
       this.tweens.add({ targets: s, alpha: { from: 0.25, to: 1 }, scale: { from: 0.7, to: 1.1 }, yoyo: true, repeat: -1, duration: 700, delay: Math.random() * 600 });
       return s;
@@ -425,10 +513,11 @@ export default class WorldScene extends Phaser.Scene {
   // Memory spots: a pale blue shimmer where a place brings back the past.
   buildMemories() {
     this.memorySprites = Object.entries(this.chapter.memories)
+      .filter(([, m]) => (m.room || 'town') === this.room)
       .filter(([id]) => !this.state.has(`mem_${id}`))
       .map(([id, m]) => {
-        const s = this.add.image(centre(m.x), centre(m.y + OY) + 2, 'glint').setDepth(2070).setTint(0x9fc4ff);
-        Object.assign(s, { kind: 'memory', id, info: m, tx: m.x, ty: m.y + OY });
+        const s = this.add.image(centre(m.x), centre(m.y + this.oy) + 2, 'glint').setDepth(2070).setTint(0x9fc4ff);
+        Object.assign(s, { kind: 'memory', id, info: m, tx: m.x, ty: m.y + this.oy });
         this.tweens.add({ targets: s, alpha: { from: 0.1, to: 0.7 }, yoyo: true, repeat: -1, duration: 1400, delay: Math.random() * 900 });
         if (m.requires) s.setTint(0xffd27a); // a story step, not a memory: warm instead of blue
         return s;
@@ -481,7 +570,7 @@ export default class WorldScene extends Phaser.Scene {
   }
 
   buildLabels() {
-    SIGNS.forEach((s) => this.label(s.x * TILE, (s.y + OY) * TILE + 1, s.text, {
+    if (!this.indoors) SIGNS.forEach((s) => this.label(s.x * TILE, (s.y + OY) * TILE + 1, s.text, {
       fontSize: '19px', color: '#d9cfb8', backgroundColor: '#0b0b0ecc', padding: { x: 6, y: 2 },
     }).setAlpha(0.8));
     this.tags = this.people.map((s) => {
@@ -503,7 +592,7 @@ export default class WorldScene extends Phaser.Scene {
   }
 
   interactables() {
-    return [...this.people, ...this.clueSprites.filter((s) => s.visible), ...this.memorySprites.filter((s) => s.visible)];
+    return [...this.people, ...this.clueSprites.filter((s) => s.visible), ...this.memorySprites.filter((s) => s.visible), ...this.doorSprites];
   }
 
   onTap(p) {
@@ -531,7 +620,7 @@ export default class WorldScene extends Phaser.Scene {
 
   // Breadth-first path between tiles (for scripted walks by other characters).
   findPath(sx, sy, gx, gy) {
-    const key = (x, y) => y * MAP_W + x;
+    const key = (x, y) => y * this.mw + x;
     const prev = new Map([[key(sx, sy), null]]);
     const queue = [[sx, sy]];
     let found = null;
@@ -556,7 +645,7 @@ export default class WorldScene extends Phaser.Scene {
   walkAway(s, gx, gy) {
     this.people = this.people.filter((p) => p !== s);
     s.body.enable = false;
-    const path = this.findPath(s.tx, s.ty, gx, gy + OY).slice(1);
+    const path = this.findPath(s.tx, s.ty, gx, gy + this.oy).slice(1);
     const step = () => {
       const next = path.shift();
       if (!next) {
@@ -578,7 +667,7 @@ export default class WorldScene extends Phaser.Scene {
   walkTo(gx, gy, target = null) {
     const sx = tileOf(this.player.body.center.x);
     const sy = tileOf(this.player.body.center.y);
-    const key = (x, y) => y * MAP_W + x;
+    const key = (x, y) => y * this.mw + x;
     const prev = new Map([[key(sx, sy), null]]);
     const queue = [[sx, sy]];
     let best = [sx, sy];
@@ -640,8 +729,15 @@ export default class WorldScene extends Phaser.Scene {
     const ui = this.scene.get('UI');
     const cam = this.cameras.main;
     const lift = ui.panelHeight() / (2 * ZOOM);
-    cam.setBounds(0, 0, MAP_W * TILE, MAP_H * TILE + lift * 2);
+    this.camBounds(lift * 2);
     this.tweens.add({ targets: cam.followOffset, y: -lift, duration: 300 });
+
+    if (s.kind === 'door') {
+      this.indicator.setVisible(false);
+      await this.useDoor(s);
+      this.busy = false;
+      return;
+    }
 
     if (s.kind === 'person') {
       this.talkingTo = s;
@@ -661,7 +757,7 @@ export default class WorldScene extends Phaser.Scene {
     this.refreshClues(); // a conversation can unlock clues (Claire's keys)
     this.tweens.add({
       targets: cam.followOffset, y: 0, duration: 300,
-      onComplete: () => cam.setBounds(0, 0, MAP_W * TILE, MAP_H * TILE),
+      onComplete: () => this.camBounds(),
     });
     this.busy = false;
   }
@@ -694,8 +790,11 @@ export default class WorldScene extends Phaser.Scene {
     const audio = this.registry.get('audio');
     if (audio && (this.cafeTick = (this.cafeTick || 0) + dt) > 250) {
       this.cafeTick = 0;
-      const d = Phaser.Math.Distance.Between(p.x, p.y, 15.5 * TILE, (5.5 + OY) * TILE);
-      audio.setCafe(Math.max(0, 1 - d / 150) ** 1.5);
+      if (this.indoors) audio.setCafe(ROOMS[this.room].ambience === 'cafe' ? 0.9 : 0);
+      else {
+        const d = Phaser.Math.Distance.Between(p.x, p.y, 15.5 * TILE, (5.5 + OY) * TILE);
+        audio.setCafe(Math.max(0, 1 - d / 150) ** 1.5);
+      }
     }
     this.lastX = this.prevX;
     this.lastY = this.prevY;
@@ -762,8 +861,8 @@ export default class WorldScene extends Phaser.Scene {
     const near = this.nearest();
     this.indicator.setVisible(!!near);
     if (near) {
-      this.indicator.setText(near.kind === 'clue' ? '?' : '!');
-      this.indicator.setPosition(near.x, near.y - (near.kind === 'clue' ? 6 : SPRITES.head + 7));
+      this.indicator.setText(near.kind === 'clue' ? '?' : near.kind === 'door' ? (this.indoors ? '▼' : '▲') : '!');
+      this.indicator.setPosition(near.x, near.y - (near.kind === 'person' ? SPRITES.head + 7 : 6));
     }
   }
 }

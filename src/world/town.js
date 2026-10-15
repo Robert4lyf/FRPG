@@ -27,6 +27,7 @@ export const SIGNS = [
   { x: 39, y: 9, text: 'PARC' },
   { x: 21.5, y: 24.4, text: 'ARRÊT DE BUS' },
   { x: 50, y: 9.4, text: 'CIMETIÈRE' },
+  { x: 51.5, y: 4, text: 'GENDARMERIE' },
 ];
 
 // crime: chapter 1 only (police, barriers, floodlight). festival: chapter 2, the Toussaint
