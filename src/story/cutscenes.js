@@ -5,6 +5,7 @@
 // Until an image is in READY, a dark placeholder with its description is shown instead.
 import { INTRO, NIGHT } from './chapter1.js';
 import { INTRO2 } from './chapter2.js';
+import { INTRO3, NIGHT3 } from './chapter3.js';
 
 // Images that exist in assets/cutscenes/. Add an id here when its file is added.
 export const READY = [
@@ -61,6 +62,36 @@ export const CUTSCENES = {
       img: 'c2_carnet', alt: 'A notebook open on a café table: times and names, a cold coffee, lantern light.',
       move: { from: { x: 0.45, y: 0.45, zoom: 1.05 }, to: { x: 0.82, y: 0.5, zoom: 1.45 } },
       lines: INTRO2.slice(3),
+    },
+  ],
+  ch3: [
+    {
+      img: 'c3_juge', alt: 'Dawn in the empty café. A woman in a grey coat waits at a table, a file open in front of her.',
+      move: { from: { x: 0.5, y: 0.45, zoom: 1.0 }, to: { x: 0.55, y: 0.48, zoom: 1.4 } },
+      lines: INTRO3.slice(0, 2),
+    },
+    {
+      img: 'c3_pierre', alt: 'A stone on the floorboards among broken glass, a note tied round it.',
+      move: { from: { x: 0.5, y: 0.5, zoom: 1.5 }, to: { x: 0.5, y: 0.5, zoom: 1.05 } },
+      lines: INTRO3.slice(2, 3),
+    },
+    {
+      img: 'c3_brouillard', alt: 'The park in fog at first light: a bench, an old oak with a hollow trunk.',
+      move: { from: { x: 0.3, y: 0.5, zoom: 1.15 }, to: { x: 0.6, y: 0.48, zoom: 1.3 } },
+      lines: INTRO3.slice(3),
+    },
+  ],
+  // Mid-chapter 3: the night Lebrun dies.
+  ch3_nuit: [
+    {
+      img: 'c3_nuit', alt: 'The square at night, thick fog, one street lamp, the café window dark.',
+      move: { from: { x: 0.5, y: 0.4, zoom: 1.2 }, to: { x: 0.5, y: 0.55, zoom: 1.0 } },
+      lines: NIGHT3.slice(0, 1),
+    },
+    {
+      img: 'c3_etang', alt: 'The pond at dawn in fog. Torch beams, two gendarmes on the bank, a flat cap floating.',
+      move: { from: { x: 0.35, y: 0.45, zoom: 1.0 }, to: { x: 0.55, y: 0.6, zoom: 1.5 } },
+      lines: NIGHT3.slice(1),
     },
   ],
 };

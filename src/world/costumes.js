@@ -54,6 +54,11 @@ export const COSTUMES = {
     base: 5,
     map: { ff7143: 'c9a64a', c77b47: '5a2a44', a9673b: '43203a', aaa8bd: '6a4a5e' },
   },
+  // The judge: charcoal-grey coat, steel-grey hair.
+  vasseur: {
+    base: 5,
+    map: { ff7143: '9aa0ac', c77b47: '3a3d46', a9673b: '2b2d34', aaa8bd: '8c8f99' },
+  },
   // Baker: cream apron over brown.
   roux: {
     base: 1,

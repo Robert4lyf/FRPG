@@ -2,27 +2,39 @@
 // People, clues and statements keep the same ids across chapters, so the Carnet carries over.
 import * as C1 from './chapter1.js';
 import * as C2 from './chapter2.js';
+import * as C3 from './chapter3.js';
 
 export const PLAYER_NAME = C1.PLAYER_NAME;
 
 // People: names and roles, plus where they stand in each phase.
 export const CAST = {};
-Object.entries({ ...C1.CAST, ...C2.CAST2 }).forEach(([id, c]) => {
+Object.entries({ ...C1.CAST, ...C2.CAST2, ...C3.CAST3 }).forEach(([id, c]) => {
   const at = {};
   (c.phases || []).forEach((p) => { at[p] = { x: c.x, y: c.y }; });
   if (C2.PLACES2[id]) at.ch2 = C2.PLACES2[id];
+  if (C3.PLACES3[id]) at.ch3 = C3.PLACES3[id];
   CAST[id] = { name: c.name, role: c.role, at };
 });
 
+// Where a person stands in a phase, given the story so far (null: not there).
+// A phase's entry is either {x, y} or a list of options with `if` / `unless` flags.
+export function placeOf(id, phase, state) {
+  const at = CAST[id]?.at[phase];
+  if (!at) return null;
+  if (!Array.isArray(at)) return at;
+  return at.find((o) => (o.if || []).every((f) => state.has(f)) && !(o.unless && state.has(o.unless))) || null;
+}
+
 const tagged = (obj, phase) => Object.fromEntries(Object.entries(obj).map(([id, v]) => [id, { phase, ...v }]));
 
-export const CLUES = { ...tagged(C1.CLUES, 'ch1'), ...tagged(C2.CLUES2, 'ch2') };
+export const CLUES = { ...tagged(C1.CLUES, 'ch1'), ...tagged(C2.CLUES2, 'ch2'), ...tagged(C3.CLUES3, 'ch3') };
 Object.entries(C2.TIMES1).forEach(([id, t]) => { if (CLUES[id]) CLUES[id].t = t; });
 
-export const STATEMENTS = { ...C1.STATEMENTS, ...C2.STATEMENTS2 };
+export const STATEMENTS = { ...tagged(C1.STATEMENTS, 'ch1'), ...tagged(C2.STATEMENTS2, 'ch2'), ...tagged(C3.STATEMENTS3, 'ch3') };
 Object.entries(C2.TIMES1).forEach(([id, t]) => { if (STATEMENTS[id]) STATEMENTS[id] = { ...STATEMENTS[id], t }; });
 
 export const CONFLICTS = C2.CONFLICTS;
+export const DIARY = C3.DIARY;
 
 export const INTRO = C1.INTRO;
 export const NIGHT = C1.NIGHT;
@@ -46,13 +58,22 @@ export const CHAPTERS = {
     metKey: (id) => `met2_${id}`, askKey: (t) => `ch2.${t}`, evidence: true,
     intro: C2.INTRO2,
     report: C2.REPORT2, outro: C2.OUTRO2, outroTitle: 'FIN DU CHAPITRE 2',
-    outroSub: 'Chapitre 3 — Les secrets · bientôt\nChapter 3 — Secrets · coming soon',
+    outroSub: 'Chapitre 3 — Les secrets\nChapter 3 — Secrets',
     flags: { done: 'ch2_done', report: 'ch2_report_done', outro: 'ch2_outro_seen', start: 'ch2_started' },
-    festival: true, timeline: true,
+    festival: true, timeline: true, next: 'ch3',
+  },
+  ch3: {
+    ...C3.CHAPTER3, dialogue: C3.DIALOGUE3, objectives: C3.OBJECTIVES3, memories: C3.MEMORIES3,
+    metKey: (id) => `met3_${id}`, askKey: (t) => `ch3.${t}`, evidence: true,
+    report: C3.REPORT3, outro: C3.OUTRO3, outroTitle: 'FIN DU CHAPITRE 3',
+    outroSub: 'Chapitre 4 — La vérité · bientôt\nChapter 4 — The Truth · coming soon',
+    flags: { done: 'ch3_done', report: 'ch3_report_done', outro: 'ch3_outro_seen', start: 'ch3_started' },
+    fog: true, bus: true, diary: true,
   },
 };
 
 export function phaseOf(state) {
+  if (state.has('ch3_started')) return 'ch3';
   if (state.has('ch2_started')) return 'ch2';
   if (state.has('prologue_done')) return 'ch1';
   return 'prologue';

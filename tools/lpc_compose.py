@@ -101,6 +101,10 @@ CAST = {
         ('feet/shoes/basic/thin', '#141216', '#4a4440'), ('legs/pants/thin', '#241420', '#5a3a50'),
         ('torso/clothes/blouse_longsleeve/female', '#3a1830', '#8a4a74'),
         ('hair/bob/adult', '#5a5a64', '#c8c8d2')]),
+    'vasseur': dict(sex='female', skin='fair', head='female', layers=[
+        ('feet/shoes/basic/thin', '#141216', '#4a4440'), ('legs/pants/thin', '#1c1d22', '#4a4c56'),
+        ('torso/clothes/blouse_longsleeve/female', '#2a2c34', '#6a6e7c'),
+        ('hair/bob/adult', '#4a4c54', '#a8acb6')]),
     'roux': dict(sex='female', skin='fair', head='female_elderly', layers=[
         ('feet/shoes/basic/thin', '#1a1210', '#4a3a2c'), ('legs/pants/thin', '#2a1c14', '#6a4a34'),
         ('torso/clothes/blouse_longsleeve/female', '#3a2216', '#9a6440'),

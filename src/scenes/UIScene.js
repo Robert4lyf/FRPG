@@ -1,5 +1,5 @@
 import {
-  CAST, CLUES, STATEMENTS, CONFLICTS, CHAPTERS, chapterOf, phaseOf, timeKey,
+  CAST, CLUES, STATEMENTS, CONFLICTS, DIARY, CHAPTERS, chapterOf, phaseOf, timeKey,
 } from '../story/story.js';
 import { speech } from '../learning/speech.js';
 import {
@@ -8,6 +8,7 @@ import {
 import { Weather, NoirAudio } from '../fx/noir.js';
 import { runReport } from '../ui/report.js';
 import { runCutscene } from '../ui/cutscene.js';
+import { runDiary } from '../ui/diary.js';
 import { CUTSCENES } from '../story/cutscenes.js';
 
 const SOUND_KEY = 'frpg.sound';
@@ -305,6 +306,10 @@ export default class UIScene extends Phaser.Scene {
 
     glosses(l.fr).forEach((g) => this.state.addWord(g.fr, g.en));
     if (l.set) this.state.set(l.set);
+    if (l.clue && this.state.addClue(l.clue)) {
+      this.sfx('right', 0.3);
+      this.toast('INDICE AJOUTÉ', CLUES[l.clue].name);
+    }
     if (l.record && this.state.addStatement(l.record)) {
       this.sfx('right', 0.3);
       this.toast('TÉMOIGNAGE NOTÉ', `${CAST[STATEMENTS[l.record].who].name} : « ${STATEMENTS[l.record].fr} »`);
@@ -440,13 +445,40 @@ export default class UIScene extends Phaser.Scene {
       }
     }
     this.closeDialogue();
+    await this.checkDiary();
   }
 
-  // A place that brings back a memory.
-  async recall(id) {
+  // Once all of Hélène's diary pages are found, the player puts them in order.
+  async checkDiary() {
+    const g = this.state;
+    if (!this.ch().diary || g.has('journal_ordre') || !DIARY.pieces.every((p) => g.has(p))) return;
+    this.world.busy = true;
+    this.cardOpen = true;
+    this.toast('LE JOURNAL', 'Toutes les pages sont là.');
+    await new Promise((r) => this.time.delayedCall(900, r));
+    await runDiary(this, DIARY);
+    g.set('journal_ordre');
+    this.cardOpen = false;
     this.openDialogue();
-    await this.playLines(this.ch().memories[id].lines);
+    await this.playLines(DIARY.done);
     this.closeDialogue();
+    this.world.busy = false;
+  }
+
+  // A place that brings back a memory. Some (going back to the café to sleep) move the
+  // story on: they set a flag and play a cutscene, then the town is rebuilt.
+  async recall(id) {
+    const m = this.ch().memories[id];
+    this.openDialogue();
+    await this.playLines(m.lines);
+    this.closeDialogue();
+    this.state.set(`mem_${id}`);
+    if (m.set) this.state.set(m.set);
+    if (m.cut) {
+      await runCutscene(this, CUTSCENES[m.cut]);
+      this.scene.get('World').scene.restart();
+      this.scene.restart();
+    }
   }
 
   async examine(id) {
@@ -458,6 +490,7 @@ export default class UIScene extends Phaser.Scene {
       this.toast('INDICE AJOUTÉ', clue.name);
     }
     this.closeDialogue();
+    await this.checkDiary();
   }
 
   // ---------- tooltips ----------
@@ -547,7 +580,11 @@ export default class UIScene extends Phaser.Scene {
       const sub = text(this, PAD + 6, 66, `à ${CAST[who].name}`, 16, C.dim, { fontStyle: 'italic' });
       c.add(sub);
       const done = (v) => { this.closeOverlay(); this.pickerKeys = null; resolve(v); };
-      const items = this.state.evidence().map((e) => (w) => {
+      // This chapter's evidence first (newest first), then earlier chapters'.
+      const phase = this.ch().id;
+      const ev = this.state.evidence().reverse();
+      const of = (e) => (e.kind === 'clue' ? CLUES[e.id] : STATEMENTS[e.id]).phase === phase;
+      const items = [...ev.filter(of), ...ev.filter((e) => !of(e))].map((e) => (w) => {
         const label = e.kind === 'clue'
           ? `▣ ${e.label}`
           : `${CAST[e.who].name} : « ${e.label} »`;

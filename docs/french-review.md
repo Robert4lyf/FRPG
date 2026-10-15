@@ -55,3 +55,54 @@ Style, naturalness or level. Applying these would change meaning, vocabulary or 
 - Chapter 2 report: removed the double answers by adding context ("…le café, puis il a fait le ménage" → a fermé; "…depuis un quart d'heure quand…" → disputaient; "…et elle n'est pas revenue" → est partie).
 - Théo: "Moi, j'ai pas le cœur à ça." (gloss cœur = heart).
 - "Le chauffeur" for the hit-and-run driver kept on purpose (foreshadowing).
+
+## Chapter 3
+
+### Summary
+
+`chapter3.js` is in good shape. The chapter's grammar targets are mostly handled well. Pluperfect agreement is correct throughout ("Je l'avais posée", "Je l'avais mise… je l'avais oubliée", "Quelqu'un l'avait cachée", "Il l'avait vue"). The object pronouns are idiomatic ("La pluie l'en a empêché", "On y lançait des pièces", "Vous n'y croyez pas", "T'en as besoin"). *Dont* is used correctly ("Celui dont elle ne m'avait jamais parlé", "Un ami dont il ne dira pas le nom"). There are no spelling, accent or gender errors.
+
+I made **10 minimal fixes**: two tu/vous breaks, one gap in the diary-order logic, one non-standard elision in the report (*que Hélène*), one participle that did not agree with *ça*, one meaning error (*faire* vs *faire faire*), one set phrase missing its pronoun, one muddled line from Lebrun, one note that did not make sense, and one word-order point. I did not change any ids, flags or mechanics.
+
+`node --check src/story/chapter3.js` passes.
+
+**Elision before Hélène.** The standard form is *qu'Hélène* / *d'Hélène*: the h is not aspirated. That is what chapters 1–3 already use everywhere ("d'Hélène"). The report line "L'ordonnance {} Hélène a trouvée" forced the non-standard *que Hélène*. The blank cannot hold *qu'* because it has to take *qui* / *dont* too. So I changed the subject (see below).
+
+### Changes made
+
+| Where | Original | Corrected | Why |
+|---|---|---|---|
+| Roux topic `page`, `q` | Hélène vous a laissé quelque chose pour moi ? | Hélène t'a laissé quelque chose pour moi ? | tu/vous break. Julien says *tu* to Mme Roux (ch1/ch2: "Tu connaissais bien Hélène ?"). |
+| Roux topic `etiquettes`, `q` | C'est vous qui écrivez les étiquettes ? | C'est toi qui écris les étiquettes ? | Same break. This also mirrors "C'est toi qui écris l'ardoise ?" to Théo. |
+| DIARY entry `d` | …Quelqu'un l'avait cachée. Julien arrive ce soir. | …Quelqu'un l'avait cachée. Heureusement, j'avais écrit à Julien. Il arrive ce soir. | Order logic. Entries b and c each point back to the previous entry with a pluperfect, but d only pointed back to 2011. Nothing tied d to c, so b→d→c looked possible. *J'avais écrit à Julien* now points back to c ("Ce soir, j'ai écrit à Julien"). EN updated. |
+| REPORT3 line 2 | L'ordonnance {} Hélène a trouvée disait… | L'ordonnance {} G. avait reçue disait… | The correct answer produced *que Hélène*, which is non-standard and inconsistent with *d'Hélène* everywhere else. A blank that also takes *qui*/*dont* cannot hold *qu'*. The new subject keeps *que* as the answer and keeps the preceding-object agreement (*reçue*). It also adds a pluperfect. EN: "that G. had been given". |
+| CLUES3 `page_claire` note | Une page du journal, envoyée à Claire. Elle ne l'avait pas ouverte. | Une page du journal, dans une lettre envoyée à Claire. Elle ne l'avait pas ouverte. | You can't "open" a page. The *l'* (*ouverte*) needs a feminine noun you can open: *la lettre*, which matches Claire's own line "Une lettre. Je ne l'avais pas ouverte." EN updated. |
+| Claire topic `photo` | J'ai trouvé ça chez elle. Elle l'avait gardée… | J'ai trouvé cette photo chez elle. Elle l'avait gardée… | *l'* refers back to *ça*, which takes masculine agreement (*gardé*). *Gardée* only works with a feminine antecedent. Naming the photo keeps the agreement the chapter is showing off. EN "this photo". |
+| Dubois `aveu` | En 2011, j'ai fait une analyse de sang. | En 2011, j'ai fait faire une analyse de sang. | *Faire une analyse de sang* = to have your own blood tested. A gendarme ordering a test is *faire faire* (as in "a fait réparer" in the report). This matches the EN ("I had a blood test done"). |
+| Vasseur verdict (max 2) | Ne me faites pas regretter. | Ne me le faites pas regretter. | Fixed expression. *Regretter* needs its object, so it is *ne me le faites pas regretter*. This is also a nice pronoun example for the chapter. |
+| Lebrun `first` | Vous avez une tête de chien battu. Moi aussi, je sais. | Vous avez une tête de chien battu. Moi aussi, j'en ai une, je sais. | "Moi aussi, je sais" reads as "I know too", not "I look the same". *J'en ai une* says it clearly with *en* (en = une tête de chien battu). EN: "I've got the same look, I know." |
+| Delacroix `greet` | Vous encore. | Vous, encore. | Without the comma, "Vous encore" is not idiomatic. The usual form is *Encore vous*, which Dubois and Mme Delacroix already use. The comma version keeps a different, haughtier phrasing for Delacroix. |
+
+### Suggestions (not applied)
+
+1. **Diary entry `c`: tense anchoring.** "Depuis que j'étais allée à Lyon, quelqu'un me suivait. Ce soir, j'ai écrit…" A diary is written in the present, so the natural form is "Depuis que je suis allée à Lyon, quelqu'un me suit." The pluperfect + imperfect only works when they hang off a past event. If you want to keep the pluperfect cue, put the past event first: "Ce soir, j'ai écrit à Julien et j'ai appelé Claire. J'avais peur : depuis que j'étais allée à Lyon, quelqu'un me suivait." Entry b has the same issue to a lesser degree. "J'avais trouvé l'ordonnance… trois semaines plus tôt" is grammatical (it comes before "je suis allée"), but in a diary *Il y a trois semaines, j'ai trouvé…* is more usual. I kept both because the mechanic depends on them.
+2. **DIARY `hint`.** It quotes two of the three cue phrases (« j'avais trouvé », « j'étais allée »), so it almost does the puzzle for the player. A gentler version: « Cherchez le plus-que-parfait (avoir/être à l'imparfait + participe). Chaque page parle de la page d'avant. »
+3. **REPORT3 line 8 distractor *lui a*.** "Le papier de Lebrun ? Quelqu'un lui a écrit à sa place" is grammatical ("someone wrote to him"). Only the dislocated *Le papier* rules it out. *En a* is also arguably possible. A learner who knows the rule will pick *l'a*, but if you want an option that is clearly wrong, use *y a* or *leur a*. Using *leur* would also get *leur* into the chapter: it is listed in the header but used nowhere.
+4. **REPORT3 line 3 distractor *découvrait*.** "Hélène découvrait la vérité avant de mourir" is grammatical ("was discovering"). It is weak, but if EN is hidden a learner could defend it. Consider *découvrira*.
+5. **REPORT3 line 7 "ce soir".** The photo is given the day after Lebrun's death, and the report is written that same evening, so it works. Check this if the timing changes.
+6. **Stone location.** INTRO3 says "Par terre, dans ma chambre, il y avait encore la pierre". The clue says "sur le rebord de la fenêtre. Je l'avais posée là". The objective says "sous votre fenêtre". Choose one place.
+7. **Garnier evidence, narr: "Il connaît bien la nuit de Lebrun."** This is ambiguous: it could mean the night Lebrun died or what Lebrun saw. If the ambiguity is not intended, use "Il sait bien ce que Lebrun a vu cette nuit-là. Trop bien."
+8. **Garnier topic `parechoc`, `q`: "Que lui est-il arrivé ?"** This is correct, but it is formal for Julien → Garnier (tu). "Qu'est-ce qui lui est arrivé ?" is more natural spoken and keeps *lui*.
+9. **Théo: "Je l'ai réparée avec du carton."** You *boucher* a window with cardboard, you don't *réparer* it: "Je l'ai bouchée avec du carton." The agreement stays the same.
+10. **Etiquettes clue: "n'a jamais écrit une majuscule de sa vie".** This is fine as emphatic French, but GCSE learners are taught *ne… jamais de*. "…une seule majuscule…" makes the emphasis clearly intentional.
+11. **Vasseur `fin`, `q`: "Des preuves. Sur la mort de Pierre Marchand"** is slightly calqued. "Des preuves. Pour la mort de Pierre Marchand, en 2011." or "…concernant la mort…" is better.
+12. **Claire: "Dix ans sans se parler" vs "quinze ans" elsewhere.** Check this is meant (the sisters' falling-out vs Julien's absence).
+13. **OUTRO3: "moteur allumé".** This is common, but "moteur en marche" is the standard written form for noir narration.
+
+### tu/vous and voice
+
+- **Fixed:** Julien used *vous* to Mme Roux twice. It is now *tu*.
+- **Claire** uses *tu* with Julien throughout, as intended ("Elle t'a retiré l'enquête ?", "Encore toi", "Regarde derrière").
+- Théo, Roux and Garnier use *tu*. Dubois, Delacroix, Mme Delacroix, Lebrun and Vasseur use *vous*. Julien matches all of them. Dubois still uses "Julien + vous". Lebrun keeps "Le petit Morel."
+- **Voices:** Théo is casual ("T'as vu", "Ouais", "Je sais pas", "T'en as besoin"). Garnier uses a saying ("Une pierre qui roule n'amasse pas mousse") and says "mon garçon". Roux says "mon petit / mon chéri". Vasseur is cold and clipped ("Seul. Je sais.", "Pas des romans."). Dubois is curt. Delacroix is pompous ("Enfin quelqu'un de raisonnable"). The narration is terse.
+- **Minor:** In Roux's line, Hélène says *tu* to Mme Roux ("donne-la à Julien"). That is plausible in a small town, but if Hélène says *vous* to her elsewhere, make it "donnez-la".

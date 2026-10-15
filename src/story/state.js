@@ -48,6 +48,13 @@ export default class GameState {
         clues: ['montre', 'sac', 'echarpe', 'boue'],
         statements: ['theo_cri', 'theo_lettre', 'garnier_vu', 'lebrun_maison', 'lebrun_dispute', 'maire_parc', 'maire_alibi', 'claire_ecole', 'claire_echarpe', 'roux_dette'],
       },
+      ch3: {
+        flags: ['intro_seen', 'met_helene', 'prologue_done', 'night_seen', 'lebrun_confessed', 'chapter1_done', 'report_done', 'outro_seen',
+          'ch2_started', 'timeline_open', 'claire_confessed', 'claire_keys', 'maire_confessed', 'dubois_dossier', 'ch2_done', 'ch2_report_done', 'ch2_outro_seen'],
+        clues: ['montre', 'sac', 'echarpe', 'boue', 'tombe', 'chrysanthemes', 'enveloppe', 'chemise'],
+        statements: ['theo_cri', 'garnier_vu', 'lebrun_maison', 'lebrun_dispute', 'maire_alibi', 'claire_ecole', 'claire_echarpe',
+          'dubois_coup', 'roux_echarpe', 'claire_fontaine', 'mme_minuit', 'maire_promoteur', 'theo_ferme', 'garnier_parti', 'lebrun_bus'],
+      },
     }[phase];
     this.flags = new Set(START.flags);
     this.clues = [...START.clues];

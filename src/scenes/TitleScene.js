@@ -11,6 +11,7 @@ const CHAPTER_LIST = [
   { id: 'prologue', unlocked: () => true },
   { id: 'ch1', unlocked: (g) => g.has('prologue_done') },
   { id: 'ch2', unlocked: (g) => g.has('outro_seen') },
+  { id: 'ch3', unlocked: (g) => g.has('ch2_outro_seen') },
 ];
 
 export default class TitleScene extends Phaser.Scene {

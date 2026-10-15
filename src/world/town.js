@@ -31,7 +31,7 @@ export const SIGNS = [
 
 // crime: chapter 1 only (police, barriers, floodlight). festival: chapter 2, the Toussaint
 // evening (lanterns over the north street, candles at the fountain and in the cemetery).
-export function buildTown({ crime = true, festival = false } = {}) {
+export function buildTown({ crime = true, festival = false, bus = false } = {}) {
   const layer = () => new Array(MAP_W * MAP_H).fill(-1);
   const L = { ground: layer(), grass: layer(), water: layer(), building: layer(), facade: layer(), object: layer(), overhead: layer() };
   const inBounds = (x, y) => x >= 0 && y >= 0 && x < MAP_W && y < MAP_H;
@@ -168,6 +168,9 @@ export function buildTown({ crime = true, festival = false } = {}) {
       light(x, 14.5, 16, 'candle', [{ x, y: 14.05 + (i % 2) * 0.2, r: 2 }]);
     });
   }
+
+  // Garnier's bus parked at the stop (chapter 3): blocks the road tiles it covers.
+  if (bus) for (let x = 18; x <= 22; x++) props.push({ kind: 'block', x, y: 27 });
 
   // Cemetery (east of the park): a low wall, cypresses, rows of graves, a gate on the west.
   nine('grass', 49, 9, 10, 16, T.grass9);

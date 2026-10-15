@@ -1,7 +1,7 @@
 import { buildTown, MAP_W, MAP_H, OY, SIGNS } from '../world/town.js';
 import { castFrame } from '../world/costumes.js';
 import { SPRITES, bodyBox } from '../world/sprites.js';
-import { CAST, CLUES, chapterOf, phaseOf } from '../story/story.js';
+import { CAST, CLUES, chapterOf, phaseOf, placeOf } from '../story/story.js';
 import { NightLighting, gradeCamera } from '../fx/noir.js';
 import { buildWetStreets, buildPoliceCar } from '../fx/street.js';
 import { buildShopDressing } from '../fx/shops.js';
@@ -39,10 +39,12 @@ export default class WorldScene extends Phaser.Scene {
 
     this.buildMap();
     if (this.crime) this.buildCrimeScene();
+    if (this.chapter.fog) this.buildFog();
     this.buildFountain();
     buildShopDressing(this, OY, { crime: this.phase !== 'prologue' });
     this.buildCemetery();
     if (this.festival) this.buildFestival();
+    if (this.chapter.bus) this.buildBus();
     this.buildCharacters();
     this.buildProps();
     this.buildClues();
@@ -66,7 +68,7 @@ export default class WorldScene extends Phaser.Scene {
   // ---------- setup ----------
 
   buildMap() {
-    this.town = buildTown({ crime: this.crime, festival: this.festival });
+    this.town = buildTown({ crime: this.crime, festival: this.festival, bus: !!this.chapter.bus });
     const map = this.make.tilemap({ tileWidth: TILE, tileHeight: TILE, width: MAP_W, height: MAP_H });
     const tiles = map.addTilesetImage('urban', 'urban', TILE, TILE, 0, 0);
     this.layers = {};
@@ -215,6 +217,54 @@ export default class WorldScene extends Phaser.Scene {
     });
   }
 
+  // Fog banks drifting slowly across the town (chapter 3).
+  buildFog() {
+    const banks = [];
+    for (let i = 0; i < 8; i++) {
+      const b = this.add.image(Math.random() * MAP_W * TILE, Math.random() * MAP_H * TILE, 'light')
+        .setScale(2.2 + Math.random() * 2.2, 1.1 + Math.random()).setTint(0x9aa3bd).setAlpha(0.13 + Math.random() * 0.08)
+        .setDepth(2056);
+      b.speed = 3 + Math.random() * 5;
+      banks.push(b);
+    }
+    this.events.on('update', (_t, dt) => banks.forEach((b) => {
+      b.x += (b.speed * dt) / 1000;
+      if (b.x > MAP_W * TILE + 200) b.x = -200;
+    }));
+  }
+
+  // Garnier's old bus at the stop (chapter 3): cream and blue, its front bumper newer than the rest.
+  buildBus() {
+    if (!this.textures.exists('bus')) {
+      const c = this.textures.createCanvas('bus', 80, 30);
+      const ctx = c.getContext();
+      const px = (x, y, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(x, y, w, h); };
+      px(2, 0, 74, 24, '#1c1a24');           // outline
+      px(3, 1, 72, 2, '#e8e0c4');            // roof, seen from above
+      px(3, 3, 72, 10, '#cfc6a8');           // cream upper body
+      px(3, 13, 72, 10, '#3e5574');          // blue lower body
+      px(3, 12, 72, 1, '#2b3a52');
+      for (let x = 6; x < 64; x += 9) px(x, 5, 7, 6, '#202534'); // windows
+      for (let x = 7; x < 64; x += 9) px(x, 6, 2, 1, '#55607a');
+      px(66, 4, 8, 8, '#2a3040');            // windscreen
+      px(3, 22, 72, 2, '#22252e');
+      px(72, 23, 7, 3, '#dcdde2');           // the new bumper: bright, unscuffed
+      px(72, 23, 7, 1, '#ffffff');
+      px(71, 15, 3, 3, '#9a9480');           // headlights, off
+      [[14, 23], [58, 23]].forEach(([x, y]) => {
+        px(x - 1, y - 1, 10, 7, '#0e0e12'); px(x + 1, y + 1, 6, 4, '#2c2c34'); px(x + 3, y + 2, 2, 2, '#77757f');
+      });
+      // Scuffs and rust on the old paint.
+      [[10, 18], [25, 20], [40, 16], [52, 19], [33, 8]].forEach(([x, y]) => px(x, y, 2, 1, '#7a6a52'));
+      c.refresh();
+    }
+    const x = 18 * TILE;
+    const y = (27 + OY) * TILE + 26;
+    this.add.image(x, y, 'bus').setOrigin(0, 1).setDepth(10 + y / 1000);
+    this.busBody = this.physics.add.staticGroup();
+    for (let tx = 18; tx <= 22; tx++) this.busBody.create(tx * TILE + 8, y - 6, undefined).setVisible(false).body.setSize(16, 10);
+  }
+
   // Toussaint evening: paper lanterns on strings across the street, candles and flowers at the fountain.
   buildFestival() {
     if (!this.textures.exists('lantern')) {
@@ -287,6 +337,7 @@ export default class WorldScene extends Phaser.Scene {
     });
     this.physics.add.collider(this.player, this.solidProps);
     this.physics.add.collider(this.player, this.graveBodies);
+    if (this.busBody) this.physics.add.collider(this.player, this.busBody);
   }
 
   // Chalk outline where the body was laid out, and muddy prints from the park.
@@ -324,9 +375,9 @@ export default class WorldScene extends Phaser.Scene {
     this.player.dir = 'up';
     SOLID_LAYERS.forEach((n) => this.physics.add.collider(this.player, this.layers[n]));
 
-    const here = ([id, c]) => c.at[this.phase] && !(id === 'helene' && this.state.has('met_helene'));
+    const here = ([id]) => placeOf(id, this.phase, this.state) && !(id === 'helene' && this.state.has('met_helene'));
     this.people = Object.entries(CAST).filter(here).map(([id, info]) => {
-      const c = { ...info, ...info.at[this.phase] };
+      const c = { ...info, ...placeOf(id, this.phase, this.state) };
       const s = this.physics.add.sprite(centre(c.x), centre(c.y + OY), 'cast', castFrame(id, 'down', 0));
       s.setOrigin(0.5, SPRITES.originY);
       const [w, h, ox, oy] = bodyBox(12, 8);
@@ -347,7 +398,7 @@ export default class WorldScene extends Phaser.Scene {
   }
 
   buildClues() {
-    this.clueSprites = Object.entries(CLUES).filter(([, c]) => c.phase === this.phase).map(([id, c]) => {
+    this.clueSprites = Object.entries(CLUES).filter(([, c]) => c.phase === this.phase && !c.given).map(([id, c]) => {
       const s = this.add.image(centre(c.x), centre(c.y + OY) + 2, 'glint').setDepth(2070);
       Object.assign(s, { kind: 'clue', id, info: c, tx: c.x, ty: c.y + OY });
       s.marker = this.add.image(s.x, s.y + 2, 'marker').setDepth(2.6).setVisible(false);
@@ -364,6 +415,11 @@ export default class WorldScene extends Phaser.Scene {
       s.setVisible(!found && open);
       s.marker.setVisible(found);
     });
+    // Memory spots that wait on the story (e.g. going back to sleep) appear when it's time.
+    this.memorySprites?.forEach((s) => {
+      const open = (s.info.requires || []).every((r) => this.state.has(r));
+      s.setVisible(open && !this.state.has(`mem_${s.id}`));
+    });
   }
 
   // Memory spots: a pale blue shimmer where a place brings back the past.
@@ -374,8 +430,10 @@ export default class WorldScene extends Phaser.Scene {
         const s = this.add.image(centre(m.x), centre(m.y + OY) + 2, 'glint').setDepth(2070).setTint(0x9fc4ff);
         Object.assign(s, { kind: 'memory', id, info: m, tx: m.x, ty: m.y + OY });
         this.tweens.add({ targets: s, alpha: { from: 0.1, to: 0.7 }, yoyo: true, repeat: -1, duration: 1400, delay: Math.random() * 900 });
+        if (m.requires) s.setTint(0xffd27a); // a story step, not a memory: warm instead of blue
         return s;
       });
+    this.refreshClues();
   }
 
   // Small habits that make people recognisable at a glance.

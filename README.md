@@ -31,7 +31,7 @@ Each chapter's grammar is what the investigation needs:
 | Prologue (done) | The letter, the last evening with Hélène | Present, passé composé |
 | 1. Trop tard (done) | The scene, old friends and old grudges, the first lie, the post-mortem | Present, passé composé, a little imparfait |
 | 2. La nuit du crime (done) | Toussaint evening: rebuilding the night on a timeline, breaking alibis, the cemetery | Imparfait vs passé composé |
-| 3. Les secrets (outline) | Hélène's diary, the ambiguous "G.", a second death | Plus-que-parfait, pronouns, *qui/que/dont* |
+| 3. Les secrets (done) | The judge, Hélène's diary (put the pages in order), the ambiguous "G.", a second death | Plus-que-parfait, pronouns, *qui/que/dont* |
 | 4. La vérité | Hypotheses and the accusation | Conditionnel, subjonctif |
 
 ## Writing content
