@@ -28,6 +28,9 @@ export default class WorldScene extends Phaser.Scene {
 
   create() {
     this.busy = true; // the UI releases this after the intro
+    // The scene object is reused on restart: clear anything a previous place left behind.
+    this.graveBodies = null; this.busBody = null; this.roomBodies = null; this.layers = null;
+    this.memorySprites = null; this.clueSprites = []; this.doorSprites = []; this.talkingTo = null;
     this.path = null;
     this.pending = null;
     this.state = this.registry.get('state');
