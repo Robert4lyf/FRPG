@@ -21,7 +21,8 @@ export const CHAPTER = {
   id: 'ch1',
   title: 'Chapitre 1 — Trop tard',
   titleEn: 'Chapter 1 — Too Late',
-  playerStart: { x: 16, y: 9 }, // outside the café, where Julien slept
+  playerStart: { x: 13, y: 3, room: 'cafe' }, // in the café, at the foot of the stairs from his room
+  autoTalk: 'theo', // Théo has just woken him: his news starts the chapter
 };
 
 export const PROLOGUE = {

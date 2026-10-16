@@ -41,9 +41,15 @@ export default class WorldScene extends Phaser.Scene {
     this.crime = !!this.chapter.crimeScene;
     this.festival = !!this.chapter.festival;
     // Town, or one of the interiors (entered through a door; see world/rooms.js).
-    this.room = ROOMS[this.registry.get('room')] ? this.registry.get('room') : 'town';
+    // No place set (a new chapter, or Continuer): start where the chapter starts.
+    const start = this.chapter.playerStart;
+    let room = this.registry.get('room');
+    let spawn = this.registry.get('spawn');
+    if (!room) { room = start.room || 'town'; spawn = start.room ? start : null; }
+    this.room = ROOMS[room] ? room : 'town';
+    this.registry.set('room', this.room);
     this.indoors = this.room !== 'town';
-    this.spawn = this.registry.get('spawn');
+    this.spawn = spawn;
     this.registry.set('spawn', null);
 
     if (this.indoors) {

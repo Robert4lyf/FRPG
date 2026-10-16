@@ -18,8 +18,8 @@ Object.entries({ ...C1.CAST, ...C2.CAST2, ...C3.CAST3 }).forEach(([id, c]) => {
 
 // Earlier chapters' scenes that now happen indoors.
 const INDOORS1 = {
-  theo: { prologue: { x: 3, y: 3, room: 'cafe' } },
   claire: { ch1: { x: 7, y: 2, room: 'ecole' } },
+  theo: { prologue: { x: 3, y: 3, room: 'cafe' }, ch1: { x: 11, y: 3, room: 'cafe' } },
 };
 Object.entries(INDOORS1).forEach(([id, by]) => Object.assign(CAST[id].at, by));
 

@@ -475,7 +475,7 @@ export default class UIScene extends Phaser.Scene {
 
   // Back to the town map (a chapter change or a cutscene always resumes outside).
   toTown() {
-    this.registry.set('room', 'town');
+    this.registry.set('room', null); // the world picks the chapter's starting place
     this.registry.set('spawn', null);
     this.registry.set('roomEntered', false);
   }
@@ -790,6 +790,14 @@ export default class UIScene extends Phaser.Scene {
       if (this.state.has(ch.flags.outro) && ch.next) { await this.startChapter(ch.next); return; }
     }
     this.world.busy = false;
+    // Some chapters open mid-scene: the conversation starts by itself (Théo at the door).
+    const who = ch.autoTalk;
+    if (who && !this.state.has(ch.metKey(who))) {
+      this.time.delayedCall(700, () => {
+        const s = this.world.people?.find((p) => p.id === who);
+        if (s && !this.world.busy) this.world.interact(s);
+      });
+    }
   }
 
   // The night of the murder, then the morning: rebuild the town for chapter 1.
