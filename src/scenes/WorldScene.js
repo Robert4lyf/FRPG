@@ -86,10 +86,24 @@ export default class WorldScene extends Phaser.Scene {
     const ui = this.scene.get('UI');
     ui?.weather?.setIndoor?.(this.indoors);
     this.registry.get('audio')?.setIndoor?.(this.indoors);
+    // After a chapter cutscene the screen is black: fade the new map in.
+    if (this.registry.get('fadeIn')) {
+      this.registry.set('fadeIn', false);
+      cam.fadeIn(900, 0, 0, 0);
+    }
     if (this.registry.get('roomEntered')) {
       this.registry.set('roomEntered', false);
       cam.fadeIn(350, 0, 0, 0);
-      this.time.delayedCall(350, () => { this.busy = false; });
+      // First time in this room this chapter: a few lines of narration as you walk in.
+      const lines = this.chapter.enter?.[this.room];
+      const seen = `entered_${this.phase}_${this.room}`;
+      this.time.delayedCall(450, async () => {
+        if (lines && !this.state.has(seen)) {
+          this.state.set(seen);
+          await ui.sayLines(lines);
+        }
+        this.busy = false;
+      });
     }
 
     this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT');
@@ -540,10 +554,12 @@ export default class WorldScene extends Phaser.Scene {
     const dubois = person('dubois');
     if (dubois) {
       // A cigarette: the tip brightens on each drag, and smoke drifts up into the rain.
-      const tip = this.add.image(dubois.x + 4, dubois.y - 3, 'light').setScale(4 / 128).setTint(0xff9a3a)
+      // At hand height: a few pixels above the feet (feet sit 8px below the sprite's position).
+      const hand = dubois.y + 8 - (SPRITES.lpc ? Math.round(SPRITES.size * 0.45) : 5);
+      const tip = this.add.image(dubois.x + 5, hand, 'light').setScale(4 / 128).setTint(0xff9a3a)
         .setBlendMode(Phaser.BlendModes.ADD).setDepth(2071);
       this.tweens.add({ targets: tip, alpha: { from: 0.35, to: 1 }, scale: { from: 3 / 128, to: 6 / 128 }, yoyo: true, repeat: -1, duration: 900, repeatDelay: 2200 });
-      this.add.particles(dubois.x + 5, dubois.y - 5, 'splash', {
+      this.add.particles(dubois.x + 6, hand - 2, 'splash', {
         speedY: { min: -9, max: -5 }, speedX: { min: -2, max: 3 }, lifespan: 2400, frequency: 700,
         scale: { start: 0.4, end: 1.6 }, alpha: { start: 0.35, end: 0 }, tint: 0xb9bccc,
       }).setDepth(2072);

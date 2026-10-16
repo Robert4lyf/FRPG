@@ -26,6 +26,9 @@ export default class UIScene extends Phaser.Scene {
     this.state = this.registry.get('state');
     this.world = this.scene.get('World');
     this.readyAt = 0;
+    // The scene object is reused on restart: clear anything a card or cutscene left open.
+    this.cardOpen = false; this.overlay = null; this.overlayKind = null;
+    this.reportKeys = null; this.cutsceneSkip = null; this.diarySolve = null; this.toasts = []; this.toasting = false;
     this.waiting = null;
     this.showEn = false;
     this.options = [];
@@ -332,8 +335,15 @@ export default class UIScene extends Phaser.Scene {
     this.sfx('click', 0.12);
   }
 
+  // Lines can depend on what the player has already heard: `if` (all must be known) and
+  // `unless` (skip if known), so nobody refers back to a conversation that never happened.
   async playLines(lines) {
-    for (const l of lines) await this.showLine(l);
+    const g = this.state;
+    const list = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+    for (const l of lines) {
+      if (!list(l.if).every((f) => g.has(f)) || list(l.unless).some((f) => g.has(f))) continue;
+      await this.showLine(l);
+    }
   }
 
   // ---------- option menus ----------
@@ -497,7 +507,7 @@ export default class UIScene extends Phaser.Scene {
     this.state.set(`mem_${id}`);
     if (m.set) this.state.set(m.set);
     if (m.cut) {
-      await runCutscene(this, CUTSCENES[m.cut]);
+      await runCutscene(this, CUTSCENES[m.cut], null, null, { hold: true });
       this.toTown();
       this.scene.get('World').scene.restart();
       this.scene.restart();
@@ -734,7 +744,8 @@ export default class UIScene extends Phaser.Scene {
 
   // ---------- title cards ----------
 
-  async card(lines, title, subtitle) {
+  // hold: a cutscene follows straight away, so stay on black rather than fading to the map.
+  async card(lines, title, subtitle, { hold = false } = {}) {
     const { W, H } = this;
     this.cardOpen = true;
     this.world.busy = true;
@@ -771,6 +782,10 @@ export default class UIScene extends Phaser.Scene {
       this.tweens.add({ targets: [t1, t2], alpha: 1, duration: 900 });
       this.audio?.thunder();
       await this.waitTap();
+    }
+    if (hold) {
+      this.time.delayedCall(1500, () => c.destroy()); // the next cutscene covers it by then
+      return;
     }
     await new Promise((r) => this.tweens.add({ targets: c, alpha: 0, duration: 700, onComplete: r }));
     c.destroy();
@@ -809,7 +824,7 @@ export default class UIScene extends Phaser.Scene {
 
   // The night of the murder, then the morning: rebuild the town for chapter 1.
   async night() {
-    await runCutscene(this, CUTSCENES.ch1, CHAPTERS.ch1.title.toUpperCase(), CHAPTERS.ch1.titleEn);
+    await runCutscene(this, CUTSCENES.ch1, CHAPTERS.ch1.title.toUpperCase(), CHAPTERS.ch1.titleEn, { hold: true });
     this.state.set('night_seen');
     this.toTown();
     this.scene.get('World').scene.restart();
@@ -838,7 +853,7 @@ export default class UIScene extends Phaser.Scene {
 
   async outro() {
     const ch = this.ch();
-    await this.card(ch.outro, ch.outroTitle, ch.outroSub);
+    await this.card(ch.outro, ch.outroTitle, ch.outroSub, { hold: !!ch.next });
     this.state.set(ch.flags.outro);
     this.updateHud();
     if (ch.next) await this.startChapter(ch.next);
@@ -848,7 +863,7 @@ export default class UIScene extends Phaser.Scene {
   // Title card for the next chapter, then rebuild the town for it.
   async startChapter(id) {
     const next = CHAPTERS[id];
-    await runCutscene(this, CUTSCENES[id], next.title.toUpperCase(), next.titleEn);
+    await runCutscene(this, CUTSCENES[id], next.title.toUpperCase(), next.titleEn, { hold: true });
     this.state.set(next.flags.start);
     this.toTown();
     this.scene.get('World').scene.restart();

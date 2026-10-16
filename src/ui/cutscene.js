@@ -32,7 +32,9 @@ function placeholder(scene, key, alt) {
   tex.refresh();
 }
 
-export async function runCutscene(ui, shots, title, subtitle) {
+// hold: the scene is about to be rebuilt (new chapter, new night): stay on black instead of
+// fading out, so the old map never shows; the new map fades in from black.
+export async function runCutscene(ui, shots, title, subtitle, { hold = false } = {}) {
   const { W, H } = ui;
   const portrait = H > W;
   ui.cardOpen = true;
@@ -139,6 +141,10 @@ export async function runCutscene(ui, shots, title, subtitle) {
     ui.tweens.add({ targets: [t1, t2], alpha: 1, duration: 900 });
     ui.audio?.thunder();
     await ui.waitTap();
+  }
+  if (hold) {
+    ui.registry.set('fadeIn', true);
+    return;
   }
   await new Promise((r) => ui.tweens.add({ targets: c, alpha: 0, duration: 700, onComplete: r }));
   c.destroy();

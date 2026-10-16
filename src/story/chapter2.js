@@ -38,8 +38,6 @@ export const CLUES2 = {
     name: "L'enveloppe de Lyon", en: 'The envelope from Lyon', x: 5, y: 4, room: 'appart', requires: ['claire_keys'],
     note: { fr: 'Une enveloppe déchirée. « Laboratoire de toxicologie, Lyon ». La lettre a disparu.', en: 'A torn envelope. "Toxicology laboratory, Lyon". The letter has gone.' },
     lines: [
-      { s: 'narr', fr: "J'ouvre la porte avec les [[clés|keys]] de Maud. L'appartement sent le café froid.", en: "I open the door with Maud's keys. The flat smells of cold coffee." },
-      { s: 'narr', fr: "Quelqu'un est venu ici avant moi. Les [[tiroirs|drawers]] sont ouverts.", en: 'Someone came here before me. The drawers are open.' },
       { s: 'narr', fr: 'Sur la table, une enveloppe [[déchirée|torn]] : « Laboratoire de [[toxicologie|toxicology]], Lyon ».', en: 'On the table, a torn envelope: "Toxicology laboratory, Lyon".' },
       { s: 'narr', fr: "Elle est vide. La lettre qui a fait pleurer Inès a [[disparu|disappeared]].", en: 'It is empty. The letter that made Inès cry has disappeared.' },
     ],
@@ -99,6 +97,15 @@ export const CONFLICTS = [
   { a: 'maire_alibi', b: 'mme_minuit', resolved: 'maire_confessed', fr: "Le maire n'était pas chez lui.", en: "The mayor wasn't at home." },
   { a: 'garnier_parti', b: 'lebrun_bus', fr: "Le bus était-il parti ? L'un des deux se trompe. Ou ment.", en: 'Had the bus left? One of them is wrong. Or lying.' },
 ];
+
+// Narration the first time you walk into a room this chapter.
+export const ENTER2 = {
+  appart: [
+      { s: 'narr', fr: "J'ouvre la porte avec les [[clés|keys]] de Maud. L'appartement sent le café froid.", en: "I open the door with Maud's keys. The flat smells of cold coffee." },
+      { s: 'narr', fr: "Quelqu'un est venu ici avant moi. Les [[tiroirs|drawers]] sont ouverts, une chaise est renversée.", en: 'Someone came here before me. The drawers are open, a chair has been knocked over.' },
+      { s: 'narr', fr: "Qu'est-ce qu'on [[cherchait|was looking for]], chez Inès ?", en: "What was someone looking for, at Inès's place?" },
+  ],
+};
 
 export const MEMORIES2 = {
   cimetiere: {
@@ -231,7 +238,8 @@ export const DIALOGUE2 = {
           { s: 'roux', fr: "Oui, l'après-midi. Elle achetait son pain. Elle était [[pâle|pale]].", en: 'Yes, in the afternoon. She was buying her bread. She was pale.' },
           { s: 'roux', fr: 'Et Maud était là aussi, devant la boulangerie. Elle attendait sa sœur.', en: 'And Maud was there too, outside the bakery. She was waiting for her sister.' },
           { s: 'roux', fr: 'Elle portait son écharpe rouge, la belle. Il faisait froid.', en: 'She was wearing her red scarf, the nice one. It was cold.', record: 'roux_echarpe' },
-          { s: 'narr', fr: '« Perdue la semaine dernière », a dit Maud.', en: '"Lost last week," Maud said.' },
+          { s: 'narr', fr: '« Perdue la semaine dernière », a dit Maud.', en: '"Lost last week," Maud said.', if: 'claire_echarpe' },
+          { s: 'narr', fr: "L'écharpe rouge, près de la fontaine. C'était donc celle de Maud.", en: 'The red scarf, near the fountain. So it was Maud\'s.', unless: 'claire_echarpe' },
         ],
       },
       {
@@ -269,7 +277,8 @@ export const DIALOGUE2 = {
       {
         id: 'soir', q: 'Où étais-tu le 30 octobre, à 23 h ?', en: 'Where were you on 30 October at 11 pm?',
         lines: [
-          { s: 'claire', e: 'hostile', fr: "Je vous l'ai dit. À l'école. Je [[corrigeais|was marking]] des cahiers.", en: 'I told you. At the school. I was marking exercise books.' },
+          { s: 'claire', e: 'hostile', fr: "Je vous l'ai dit. À l'école. Je [[corrigeais|was marking]] des cahiers.", en: 'I told you. At the school. I was marking exercise books.', if: 'claire_ecole' },
+          { s: 'claire', e: 'hostile', fr: "À l'école. Je [[corrigeais|was marking]] des cahiers. Seule.", en: 'At the school. I was marking exercise books. Alone.', unless: 'claire_ecole', record: 'claire_ecole' },
           { s: 'narr', fr: 'Elle regarde la tombe, pas moi.', en: 'She looks at the grave, not at me.' },
         ],
       },
@@ -292,7 +301,8 @@ export const DIALOGUE2 = {
     evidence: {
       roux_echarpe: [
         { s: 'claire', fr: '...', en: '...' },
-        { s: 'claire', e: 'shaken', fr: "D'accord. Je n'étais pas à l'école.", en: "All right. I wasn't at the school." },
+        { s: 'claire', e: 'shaken', fr: "D'accord. Je n'étais pas à l'école.", en: "All right. I wasn't at the school.", if: 'claire_ecole' },
+        { s: 'claire', e: 'shaken', fr: "D'accord. L'écharpe est à moi. Et je ne l'avais pas perdue.", en: "All right. The scarf is mine. And I hadn't lost it.", unless: 'claire_ecole' },
         { s: 'claire', fr: "Inès m'a appelée ce soir-là. Après dix ans de silence. Elle voulait me voir à la fontaine, à 23 h 15.", en: 'Inès called me that evening. After ten years of silence. She wanted to see me at the fountain, at 23:15.' },
         { s: 'claire', fr: "Elle disait que l'accident de papa n'était pas un accident. Qu'elle avait des [[preuves|proof]].", en: "She said Dad's accident wasn't an accident. That she had proof." },
         { s: 'claire', e: 'hostile', fr: "Je ne voulais pas entendre ça. Pas encore. On s'est [[disputées|argued]]. J'ai crié.", en: "I didn't want to hear that. Not again. We argued. I shouted." },
@@ -328,7 +338,8 @@ export const DIALOGUE2 = {
       {
         id: 'soir', q: 'Où étiez-vous le 30 octobre, à 23 h 40 ?', en: 'Where were you on 30 October at 23:40?',
         lines: [
-          { s: 'delacroix', e: 'hostile', fr: "Je vous l'ai déjà dit. Chez moi, avec ma femme. Demandez-lui.", en: 'I already told you. At home, with my wife. Ask her.' },
+          { s: 'delacroix', e: 'hostile', fr: "Je vous l'ai déjà dit. Chez moi, avec ma femme. Demandez-lui.", en: 'I already told you. At home, with my wife. Ask her.', if: 'maire_alibi' },
+          { s: 'delacroix', e: 'hostile', fr: "Chez moi, avec ma femme. Demandez-lui.", en: 'At home, with my wife. Ask her.', unless: 'maire_alibi', record: 'maire_alibi' },
           { s: 'narr', fr: 'Bonne idée.', en: 'Good idea.' },
         ],
       },
@@ -358,7 +369,7 @@ export const DIALOGUE2 = {
         lines: [
           { s: 'mmedelacroix', fr: 'Avec moi ? Non. Il travaillait tard, comme toujours.', en: 'With me? No. He was working late, as always.' },
           { s: 'mmedelacroix', fr: "Il est rentré à minuit. Il était [[trempé|soaked]]. Il n'a rien dit.", en: "He came home at midnight. He was soaked. He didn't say anything.", record: 'mme_minuit' },
-          { s: 'narr', fr: "Le maire a dit qu'il était chez lui, avec sa femme.", en: 'The mayor said he was at home, with his wife.' },
+          { s: 'narr', fr: "Le maire a dit qu'il était chez lui, avec sa femme.", en: 'The mayor said he was at home, with his wife.', if: 'maire_alibi' },
         ],
       },
       {

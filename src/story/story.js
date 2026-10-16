@@ -67,7 +67,7 @@ export const CHAPTERS = {
     report: C2.REPORT2, outro: C2.OUTRO2, outroTitle: 'FIN DU CHAPITRE 2',
     outroSub: 'Chapitre 3 — Les secrets\nChapter 3 — Secrets',
     flags: { done: 'ch2_done', report: 'ch2_report_done', outro: 'ch2_outro_seen', start: 'ch2_started' },
-    festival: true, timeline: true, next: 'ch3',
+    festival: true, timeline: true, next: 'ch3', enter: C2.ENTER2,
   },
   ch3: {
     ...C3.CHAPTER3, dialogue: C3.DIALOGUE3, objectives: C3.OBJECTIVES3, memories: C3.MEMORIES3,
