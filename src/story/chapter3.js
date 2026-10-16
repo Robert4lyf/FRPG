@@ -109,6 +109,56 @@ export const CLUES3 = {
       { s: 'narr', fr: 'Rouvière doit voir ce papier.', en: 'Rouvière needs to see this note.' },
     ],
   },
+  ticket: {
+    name: 'Le dernier ticket', en: 'The last ticket', x: 19, y: 26, requires: ['horaire'],
+    note: { fr: 'Le bus a fini son service le 30 octobre à 23 h 52. Après le cri. Lacombe avait dit 23 h 35.', en: 'The bus finished its service on 30 October at 23:52. After the scream. Lacombe had said 23:35.' },
+    lines: [
+      { s: 'narr', fr: 'Le bus est parti après le cri. Ferhat disait vrai. Lacombe a [[menti|lied]].', en: 'The bus left after the scream. Ferhat was telling the truth. Lacombe lied.' },
+      { s: 'narr', fr: "Dix-sept minutes de plus sur la place. Pour faire quoi ?", en: 'Seventeen more minutes in the square. To do what?' },
+    ],
+    puzzle: {
+      before: [
+        { s: 'narr', fr: 'Par la vitre du bus, la machine à tickets. Elle garde une copie de chaque ticket, sur un [[rouleau|roll]].', en: 'Through the bus window, the ticket machine. It keeps a copy of every ticket, on a roll.' },
+        { s: 'narr', fr: 'Je déroule jusqu\'au 30 octobre. Le dernier ticket du soir.', en: 'I unroll it back to 30 October. The last ticket of the evening.' },
+      ],
+      title: 'LE BUS DE LACOMBE', heading: 'Le dernier ticket',
+      items: [
+        { label: 'Le ticket', fr: '« LIGNE 12 — FIN DE SERVICE — 30/10 — 23 H 52 »', en: '"LINE 12 — END OF SERVICE — 30/10 — 23:52"' },
+        { label: "L'horaire, à l'arrêt", fr: '« DERNIER BUS : 23 H 30 »', en: '"LAST BUS: 23:30"' },
+        { label: 'Le rapport du légiste', fr: 'Le [[coup|blow]] : vers vingt-trois heures quarante.', en: 'The blow: around twenty to midnight.' },
+        { label: 'Lacombe', fr: "« Je suis parti à vingt-trois heures trente-cinq. Personne n'est venu. »", en: '"I left at twenty-five to midnight. Nobody came."' },
+      ],
+      question: { fr: "Qu'est-ce que le ticket prouve ?", en: 'What does the ticket prove?' },
+      options: [
+        'Le bus est parti à 23 h 35, comme Lacombe le dit.',
+        'Le bus est parti avant le cri. Ferhat a menti.',
+        'Le bus est parti après le cri. Lacombe a menti.',
+        "Le ticket est d'un autre soir.",
+      ],
+      answer: 2,
+      wrong: { fr: 'Non. Comparez les heures : le ticket, le coup, Lacombe.', en: 'No. Compare the times: the ticket, the blow, Lacombe.' },
+      later: [{ s: 'narr', fr: 'Je reviendrai regarder ce rouleau.', en: "I'll come back and look at that roll." }],
+    },
+  },
+  tiroir: {
+    name: 'Le tiroir de Rouvière', en: "Rouvière's drawer", x: 3, y: 4, room: 'gendarmerie', requires: ['code_tiroir'],
+    note: { fr: "Une analyse de sang de 2011, laboratoire de Lyon. Alcool : 1,9 g/l. Le nom a été découpé.", en: 'A 2011 blood test, Lyon laboratory. Alcohol: 1.9 g/l. The name has been cut out.' },
+    lines: [
+      { s: 'narr', fr: "Clic. Dans le tiroir, une feuille [[jaunie|yellowed]] : « Laboratoire de toxicologie, Lyon — novembre 2011 ».", en: 'Click. In the drawer, a yellowed sheet: "Toxicology laboratory, Lyon — November 2011".' },
+      { s: 'narr', fr: 'Une analyse de sang. Alcool : un virgule neuf gramme par litre. Beaucoup trop pour conduire.', en: 'A blood test. Alcohol: one point nine grams per litre. Far too much to drive.' },
+      { s: 'narr', fr: 'Le nom a été [[découpé|cut out]], aux ciseaux. Rouvière protège encore son ami.', en: 'The name has been cut out, with scissors. Rouvière is still protecting his friend.' },
+    ],
+    puzzle: {
+      before: [{ s: 'narr', fr: 'Le tiroir du bureau. Un petit [[cadenas|padlock]] à quatre chiffres. Je regarde le papier de Rouvière.', en: "The desk drawer. A little four-digit padlock. I look at Rouvière's piece of paper." }],
+      title: 'LE BUREAU DE ROUVIÈRE', heading: 'Le cadenas',
+      items: [{ label: 'Le papier de Rouvière', fr: '« soixante-dix-huit — quatre-vingt-douze »', en: '"seventy-eight — ninety-two"' }],
+      question: { fr: 'Quel est le code ?', en: 'What is the code?' },
+      options: ['6 0 1 8', '7 8 9 2', '7 8 8 2', '6 8 9 2'],
+      answer: 1,
+      wrong: { fr: 'Le cadenas ne s\'ouvre pas. Soixante-dix, c\'est 70. Quatre-vingts, c\'est 80.', en: "The padlock doesn't open. Soixante-dix is 70. Quatre-vingts is 80." },
+      later: [{ s: 'narr', fr: 'Le cadenas reste fermé. Plus tard.', en: 'The padlock stays shut. Later.' }],
+    },
+  },
   // Given in conversation (no position).
   page_roux: {
     name: 'La page de Mme Pellegrin', en: "Mme Pellegrin's page", given: true,
@@ -209,7 +259,8 @@ export const OBJECTIVES3 = [
   { fr: 'Il est tard. Montez dormir, au café.', en: "It's late. Go up to bed, at the café.", done: has('lebrun_mort') },
   { fr: "Allez à l'étang.", en: 'Go to the pond.', done: has('lebrun_note') },
   { fr: 'Faites parler Rouvière, à la gendarmerie.', en: 'Make Rouvière talk, at the gendarmerie.', done: has('dubois_aveu') },
-  { fr: 'Regardez le bus de Lacombe de plus près.', en: "Take a closer look at Lacombe's bus.", done: has('parechoc') },
+  { fr: 'Ouvrez le tiroir de Rouvière.', en: "Open Rouvière's drawer.", done: has('tiroir') },
+  { fr: 'Regardez le bus de Lacombe de plus près.', en: "Take a closer look at Lacombe's bus.", done: has('parechoc', 'ticket'), count: count('parechoc', 'ticket') },
   { fr: 'Maud vous attend à la fontaine.', en: 'Maud is waiting for you at the fountain.', done: has('photo') },
   { fr: 'Retournez voir la juge.', en: 'Go back to the judge.', done: has('ch3_done') },
   { fr: 'Écrivez vos notes.', en: 'Write your notes.', done: has('ch3_report_done') },
@@ -465,6 +516,10 @@ export const DIALOGUE3 = {
       },
     ],
     evidence: {
+      ticket: [
+        { s: 'garnier', fr: 'Vingt-trois heures cinquante-deux ? Cette vieille machine se trompe d\'heure, mon garçon.', en: 'Eight minutes to midnight? That old machine always gets the time wrong, my boy.' },
+        { s: 'narr', fr: "Il rit. Mais ses mains ne rient pas : elles serrent sa casquette.", en: "He laughs. But his hands aren't laughing: they're gripping his cap." },
+      ],
       lebrun_note: [
         { s: 'garnier', fr: "« Pardon »... Il avait des remords. Pour Inès, peut-être. Il l'avait vue, cette nuit-là, et il n'avait rien fait.", en: '"Forgive me"... He had regrets. For Inès, perhaps. He had seen her that night, and he had done nothing.' },
         { s: 'narr', fr: 'Il connaît bien la nuit de Ferhat. Trop bien.', en: "He knows Ferhat's night well. Too well." },
@@ -510,6 +565,8 @@ export const DIALOGUE3 = {
         { s: 'you', fr: 'Le sang de qui ?', en: 'Whose blood?' },
         { s: 'dubois', fr: "D'un ami. Un ami que je connais depuis quarante ans. Je ne vous dirai pas son nom.", en: "A friend's. A friend I've known for forty years. I won't tell you his name." },
         { s: 'dubois', e: 'hostile', fr: "Mais je n'ai tué personne, Sacha. Je vous le jure.", en: "But I haven't killed anyone, Sacha. I swear it." },
+        { s: 'dubois', fr: "Le résultat est encore dans mon tiroir. Le code, je ne peux pas le dire à voix haute. Mais je peux l'écrire.", en: "The result is still in my drawer. The code, I can't say it out loud. But I can write it." },
+        { s: 'narr', fr: "Il écrit deux nombres sur un papier, en lettres, et me le donne. Puis il regarde par la fenêtre.", en: 'He writes two numbers on a piece of paper, in words, and hands it to me. Then he looks out of the window.', set: 'code_tiroir' },
         { s: 'narr', fr: "Un ami dont il ne dira pas le nom. À Belleville, deux hommes le connaissent depuis quarante ans.", en: "A friend whose name he won't say. In Belleville, two men have known him for forty years." },
         { s: 'narr', fr: 'Guy Delorme. Et Gaby Lacombe.', en: 'Guy Delorme. And Gaby Lacombe.' },
       ],

@@ -28,7 +28,8 @@ export const PLACES2 = {
   roux: { x: 6, y: 13 },
   delacroix: { x: 24, y: 7 },
   mmedelacroix: { x: 28, y: 9 },
-  claire: { x: 55, y: 15 },
+  // At the gate until Sacha has found her father's grave; then beside it.
+  claire: [{ x: 55, y: 15, if: ['tombe'] }, { x: 51, y: 17 }],
   lebrun: { x: 36, y: 12 },
   garnier: { x: 22, y: 26 },
 };
@@ -51,14 +52,61 @@ export const CLUES2 = {
       { s: 'narr', fr: "Il est vide. Quelqu'un a pris les papiers. Pourquoi ?", en: 'It is empty. Someone took the papers. Why?' },
     ],
   },
+  repondeur: {
+    name: "Le répondeur d'Inès", en: "Inès's answering machine", x: 2, y: 3, room: 'appart', requires: ['claire_keys'],
+    note: { fr: 'Le labo de Lyon voulait voir Inès le 31 octobre, à 9 h 15. Le lendemain de sa mort.', en: 'The Lyon lab wanted to see Inès on 31 October, at 9:15. The day after her death.' },
+    lines: [
+      { s: 'narr', fr: 'Le trente et un octobre, à neuf heures et quart. Le [[lendemain|day after]] de sa mort.', en: 'The thirty-first of October, at a quarter past nine. The day after her death.' },
+      { s: 'narr', fr: "Inès allait apprendre quelque chose à Lyon. Quelqu'un ne voulait pas qu'elle y aille.", en: "Inès was going to find something out in Lyon. Someone didn't want her to go." },
+    ],
+    puzzle: {
+      before: [
+        { s: 'narr', fr: 'Sur la commode, un vieux [[répondeur|answering machine]]. Une petite lumière rouge [[clignote|is blinking]].', en: 'On the chest of drawers, an old answering machine. A little red light is blinking.' },
+        { s: 'narr', fr: "Trois messages. Personne ne les a [[écoutés|listened to]].", en: 'Three messages. Nobody has listened to them.' },
+      ],
+      title: "LE RÉPONDEUR D'INÈS", heading: 'Trois messages',
+      sub: { fr: "Touchez un message pour l'écouter.", en: 'Tap a message to listen to it.' },
+      items: [
+        { label: 'Message 1', speak: true, hidden: true, fr: "Bonjour Inès, c'est Mme Pellegrin. Tu as oublié ta baguette ! Je te la garde pour demain.", en: "Hello Inès, it's Mme Pellegrin. You forgot your baguette! I'm keeping it for you for tomorrow." },
+        { label: 'Message 2', speak: true, hidden: true, fr: "Bonjour madame Ferreira, ici le laboratoire de Lyon. Nous avons les résultats pour le dossier de votre père. Rappelez-nous, s'il vous plaît.", en: "Hello Ms Ferreira, this is the Lyon laboratory. We have the results for your father's file. Please call us back." },
+        { label: 'Message 3', speak: true, hidden: true, fr: "Madame Ferreira, c'est encore le laboratoire. Le docteur Morel peut vous recevoir le trente et un octobre, à neuf heures et quart. Au revoir.", en: "Ms Ferreira, it's the laboratory again. Dr Morel can see you on the thirty-first of October, at a quarter past nine. Goodbye." },
+      ],
+      question: { fr: 'Le laboratoire veut voir Inès quand ?', en: 'When does the laboratory want to see Inès?' },
+      options: ['Le 21 octobre, à 9 h 15', 'Le 31 octobre, à 9 h 15', 'Le 31 octobre, à 9 h 45', 'Le 30 octobre, à 18 h'],
+      answer: 1,
+      wrong: { fr: 'Non. Écoutez encore le troisième message : le jour, puis l\'heure.', en: 'No. Listen to the third message again: the day, then the time.' },
+      later: [{ s: 'narr', fr: 'Je reviendrai écouter ces messages.', en: "I'll come back and listen to these messages." }],
+    },
+  },
   tombe: {
     name: 'La tombe de Tiago Ferreira', en: "Tiago Ferreira's grave", x: 54, y: 16,
-    note: { fr: 'Tiago Ferreira, 1959–2011. Mort sur la route de Lyon.', en: 'Tiago Ferreira, 1959–2011. Died on the Lyon road.' },
+    note: { fr: 'Tiago Ferreira, 1959-2011. Mort sur la route de Lyon.', en: 'Tiago Ferreira, 1959-2011. Died on the Lyon road.' },
     lines: [
-      { s: 'narr', fr: '« Tiago Ferreira, 1959 – 2011. »', en: '"Tiago Ferreira, 1959 – 2011."' },
+      { s: 'narr', fr: '« Tiago Ferreira, 1959-2011. »', en: '"Tiago Ferreira, 1959-2011."' },
       { s: 'narr', fr: "Le père d'Inès et de Maud. Il est mort l'année de mon [[départ|leaving]].", en: "Inès and Maud's father. He died the year I left." },
       { s: 'narr', fr: "Je ne suis pas venu à l'[[enterrement|funeral]]. Je faisais mes [[valises|suitcases]].", en: "I didn't come to the funeral. I was packing my suitcases." },
     ],
+    // Four graves read "T. Ferreira": Mme Pellegrin's description (in words) says which.
+    puzzle: {
+      needs: 'pellegrin_tombe',
+      blocked: [
+        { s: 'narr', fr: "Ferreira... Ici, c'est un nom [[courant|common]]. Je compte quatre tombes « T. Ferreira ».", en: 'Ferreira... Round here, it\'s a common name. I count four graves marked "T. Ferreira".' },
+        { s: 'narr', fr: 'Laquelle est celle de Tiago ? Mme Pellegrin connaît tout le monde à Belleville.', en: "Which one is Tiago's? Mme Pellegrin knows everyone in Belleville.", set: 'tombes_vues' },
+      ],
+      before: [{ s: 'narr', fr: 'Quatre tombes « T. Ferreira ». Je me souviens de ce que Mme Pellegrin m\'a dit.', en: 'Four graves marked "T. Ferreira". I remember what Mme Pellegrin told me.' }],
+      title: 'LE CIMETIÈRE', heading: 'Quatre tombes « T. Ferreira »',
+      sub: { fr: "Mme Pellegrin : « Il est mort en deux mille onze. Il avait cinquante-deux ans. Sa tombe est sous les cyprès. »", en: 'Mme Pellegrin: "He died in two thousand and eleven. He was fifty-two. His grave is under the cypress trees."' },
+      question: { fr: 'Quelle est la tombe de Tiago ?', en: "Which is Tiago's grave?" },
+      options: [
+        '« T. Ferreira, 1931-2011 ». Sous les cyprès.',
+        '« T. Ferreira, 1959-2001 ». Près du mur.',
+        '« T. Ferreira, 1959-2011 ». Sous les cyprès.',
+        '« T. Ferreira, 1962-2011 ». Près du mur.',
+      ],
+      answer: 2,
+      wrong: { fr: "Non. Relisez Mme Pellegrin : l'année, l'âge, l'endroit.", en: 'No. Read Mme Pellegrin again: the year, the age, the place.' },
+      later: [{ s: 'narr', fr: 'Je reviendrai.', en: "I'll come back." }],
+    },
   },
   chrysanthemes: {
     name: 'Les chrysanthèmes', en: 'The chrysanthemums', x: 53, y: 16,
@@ -156,7 +204,7 @@ export const OBJECTIVES2 = [
   { fr: 'Parlez au brigadier Rouvière, près de la fontaine.', en: 'Talk to Sergeant Rouvière, near the fountain.', done: has('met2_dubois') },
   { fr: 'Qui était la femme de la fontaine ?', en: 'Who was the woman at the fountain?', done: has('claire_confessed') },
   { fr: "Vérifiez l'alibi du maire.", en: "Check the mayor's alibi.", done: has('maire_confessed') },
-  { fr: "Fouillez l'appartement d'Inès, au-dessus de la pharmacie.", en: "Search Inès's flat, above the pharmacy.", done: has('enveloppe', 'chemise') },
+  { fr: "Fouillez l'appartement d'Inès, au-dessus de la pharmacie.", en: "Search Inès's flat, above the pharmacy.", done: has('enveloppe', 'chemise', 'repondeur') },
   { fr: "Allez au cimetière, à l'est du parc.", en: 'Go to the cemetery, east of the park.', done: has('tombe', 'chrysanthemes') },
   { fr: 'Montrez à Rouvière ce que vous avez trouvé chez Inès.', en: "Show Rouvière what you found at Inès's.", done: has('dubois_dossier') },
   { fr: 'Qui était sur la place au moment du cri ?', en: 'Who was in the square when the scream came?', done: has('lebrun_bus', 'garnier_parti') },
@@ -251,6 +299,14 @@ export const DIALOGUE2 = {
           { s: 'narr', fr: 'Je me souviens. Je ne voulais pas me souvenir.', en: "I remember. I didn't want to remember." },
         ],
       },
+      {
+        id: 'tombe', q: 'Où est la tombe de Tiago ?', en: "Where is Tiago's grave?", requires: ['tombes_vues'],
+        lines: [
+          { s: 'roux', fr: 'Il y a beaucoup de Ferreira, là-bas. Notre Tiago est mort en deux mille onze.', en: 'There are lots of Ferreiras over there. Our Tiago died in two thousand and eleven.' },
+          { s: 'roux', e: 'shaken', fr: 'Il avait cinquante-deux ans. Ce n\'est pas un âge pour mourir.', en: "He was fifty-two. That's no age to die." },
+          { s: 'roux', fr: 'Sa tombe est sous les [[cyprès|cypress trees]]. J\'y vais à chaque Toussaint.', en: 'His grave is under the cypress trees. I go there every All Saints\'.', set: 'pellegrin_tombe' },
+        ],
+      },
     ],
     evidence: {
       claire_echarpe: [
@@ -265,10 +321,12 @@ export const DIALOGUE2 = {
 
   claire: {
     first: [
-      { s: 'narr', fr: 'Maud est debout devant une [[tombe|grave]]. Elle ne se retourne pas.', en: "Maud is standing in front of a grave. She doesn't turn round." },
+      { s: 'narr', fr: 'Maud est debout devant une [[tombe|grave]]. Elle ne se retourne pas.', en: "Maud is standing in front of a grave. She doesn't turn round.", if: 'tombe' },
+      { s: 'narr', fr: "Maud est à l'entrée du cimetière, sous la pluie. Elle ne se retourne pas.", en: "Maud is at the entrance to the cemetery, in the rain. She doesn't turn round.", unless: 'tombe' },
       { s: 'claire', e: 'hostile', fr: 'Vous me [[suivez|follow]], maintenant ?', en: 'You follow me now?' },
       { s: 'you', fr: 'Je cherche la vérité, Maud.', en: "I'm looking for the truth, Maud." },
-      { s: 'claire', fr: "C'est mon père. Tiago Ferreira. Vous vous souvenez de lui ?", en: 'This is my father. Tiago Ferreira. Do you remember him?' },
+      { s: 'claire', fr: "C'est mon père. Tiago Ferreira. Vous vous souvenez de lui ?", en: 'This is my father. Tiago Ferreira. Do you remember him?', if: 'tombe' },
+      { s: 'claire', fr: "Mon père est [[enterré|buried]] ici. Tiago Ferreira. Vous vous souvenez de lui ?", en: 'My father is buried here. Tiago Ferreira. Do you remember him?', unless: 'tombe' },
       { s: 'you', fr: 'Il réparait nos vélos.', en: 'He used to fix our bikes.' },
       { s: 'claire', e: 'shaken', fr: 'Oui. Il réparait tout.', en: 'Yes. He used to fix everything.' },
     ],
@@ -279,7 +337,8 @@ export const DIALOGUE2 = {
         lines: [
           { s: 'claire', e: 'hostile', fr: "Je vous l'ai dit. À l'école. Je [[corrigeais|was marking]] des cahiers.", en: 'I told you. At the school. I was marking exercise books.', if: 'claire_ecole' },
           { s: 'claire', e: 'hostile', fr: "À l'école. Je [[corrigeais|was marking]] des cahiers. Seule.", en: 'At the school. I was marking exercise books. Alone.', unless: 'claire_ecole', record: 'claire_ecole' },
-          { s: 'narr', fr: 'Elle regarde la tombe, pas moi.', en: 'She looks at the grave, not at me.' },
+          { s: 'narr', fr: 'Elle regarde la tombe, pas moi.', en: 'She looks at the grave, not at me.', if: 'tombe' },
+          { s: 'narr', fr: 'Elle regarde les tombes, pas moi.', en: 'She looks at the graves, not at me.', unless: 'tombe' },
         ],
       },
       {

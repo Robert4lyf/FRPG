@@ -50,8 +50,9 @@ export default class GameState {
       },
       ch3: {
         flags: ['intro_seen', 'met_helene', 'prologue_done', 'night_seen', 'lebrun_confessed', 'chapter1_done', 'report_done', 'outro_seen',
-          'ch2_started', 'timeline_open', 'claire_confessed', 'claire_keys', 'maire_confessed', 'dubois_dossier', 'ch2_done', 'ch2_report_done', 'ch2_outro_seen'],
-        clues: ['montre', 'sac', 'echarpe', 'boue', 'tombe', 'chrysanthemes', 'enveloppe', 'chemise'],
+          'ch2_started', 'timeline_open', 'claire_confessed', 'claire_keys', 'maire_confessed', 'dubois_dossier', 'ch2_done', 'ch2_report_done', 'ch2_outro_seen',
+          'tombes_vues', 'pellegrin_tombe', 'solved_tombe', 'solved_repondeur'],
+        clues: ['montre', 'sac', 'echarpe', 'boue', 'tombe', 'chrysanthemes', 'enveloppe', 'chemise', 'repondeur'],
         statements: ['theo_cri', 'garnier_vu', 'lebrun_maison', 'lebrun_dispute', 'maire_alibi', 'claire_ecole', 'claire_echarpe',
           'dubois_coup', 'roux_echarpe', 'claire_fontaine', 'mme_minuit', 'maire_promoteur', 'theo_ferme', 'garnier_parti', 'lebrun_bus'],
       },

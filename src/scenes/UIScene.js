@@ -9,6 +9,7 @@ import { Weather, NoirAudio } from '../fx/noir.js';
 import { runReport } from '../ui/report.js';
 import { runCutscene } from '../ui/cutscene.js';
 import { runDiary } from '../ui/diary.js';
+import { runPuzzle } from '../ui/puzzle.js';
 import { CUTSCENES } from '../story/cutscenes.js';
 
 const SOUND_KEY = 'frpg.sound';
@@ -28,7 +29,7 @@ export default class UIScene extends Phaser.Scene {
     this.readyAt = 0;
     // The scene object is reused on restart: clear anything a card or cutscene left open.
     this.cardOpen = false; this.overlay = null; this.overlayKind = null;
-    this.reportKeys = null; this.cutsceneSkip = null; this.diarySolve = null; this.toasts = []; this.toasting = false;
+    this.reportKeys = null; this.cutsceneSkip = null; this.diarySolve = null; this.puzzleSolve = null; this.toasts = []; this.toasting = false;
     this.waiting = null;
     this.showEn = false;
     this.options = [];
@@ -516,7 +517,29 @@ export default class UIScene extends Phaser.Scene {
 
   async examine(id) {
     const clue = CLUES[id];
+    const p = clue.puzzle;
     this.openDialogue();
+    // A puzzle stands between the player and some clues: solve it to get the clue.
+    if (p && !this.state.has(`solved_${id}`)) {
+      if (p.needs && !this.state.has(p.needs)) {
+        await this.playLines(p.blocked);
+        this.closeDialogue();
+        return;
+      }
+      await this.playLines(p.before || []);
+      this.closeDialogue();
+      this.cardOpen = true;
+      const solved = await runPuzzle(this, p);
+      this.cardOpen = false;
+      this.lock(300);
+      this.openDialogue();
+      if (!solved) {
+        await this.playLines(p.later || []);
+        this.closeDialogue();
+        return;
+      }
+      this.state.set(`solved_${id}`);
+    }
     await this.playLines(clue.lines);
     if (this.state.addClue(id)) {
       this.sfx('right', 0.3);

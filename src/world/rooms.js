@@ -88,6 +88,7 @@ export const ROOMS = {
       { kind: 'window', x: 5, y: 0, w: 0, h: 0, span: 2, neon: true },
       { kind: 'painting', x: 9, y: 0, w: 0, h: 0 },
       { kind: 'drawers_open', x: 1, y: 2, w: 2, h: 1, span: 2 },
+      { kind: 'answerphone', x: 2, y: 2, w: 0, h: 0 },
       { kind: 'bed', x: 9, y: 2, w: 2, h: 2 },
       { kind: 'table', x: 5, y: 4, w: 1, h: 1 }, { kind: 'chair', x: 4, y: 4, w: 1, h: 1, fallen: true },
       { kind: 'papers', x: 6, y: 5, w: 0, h: 0 },
@@ -254,6 +255,10 @@ function furnitureTexture(scene, f) {
     case 'wardrobe': return { key: canvas(scene, 'f_wardrobe', 16, 40, (px) => {
       px(0, 0, 16, 40, OUT); px(1, 1, 14, 38, WOOD[1]); px(7, 2, 1, 36, WOOD[0]); px(5, 18, 1, 3, '#c8a050'); px(10, 18, 1, 3, '#c8a050');
     }), oy: 8 };
+    case 'answerphone': return { key: canvas(scene, 'f_answerphone', 14, 8, (px) => {
+      px(0, 1, 14, 7, OUT); px(1, 2, 12, 5, '#2e2a2c'); px(2, 3, 4, 3, '#4a4448'); px(8, 3, 2, 1, '#8a8488'); px(8, 5, 4, 1, '#8a8488');
+      px(11, 2, 2, 2, '#ff3a30'); // the blinking light
+    }), lift: 22, dx: 1 };
     case 'papers': return { key: canvas(scene, 'f_papers', 18, 8, (px) => {
       px(0, 2, 7, 5, '#e8e4dc'); px(6, 0, 7, 5, '#dcd6c8'); px(11, 3, 7, 5, '#e8e4dc'); px(1, 4, 5, 1, '#8a8478');
     }), oy: -2, flat: true };
@@ -329,10 +334,12 @@ export function buildRoom(scene, id) {
     const footH = Math.max(1, f.h || 1) * TILE;
     const tex = scene.textures.get(t.key).getSourceImage();
     // Wall pieces hang centred on the back wall; everything else stands on its footprint.
-    const bottom = t.wall ? Math.max(3, Math.round((2 * TILE - tex.height) / 2) - 1) + tex.height : f.y * TILE + footH;
+    // lift: pixels up from the footprint, for things standing on other furniture.
+    const base = t.wall ? Math.max(3, Math.round((2 * TILE - tex.height) / 2) - 1) + tex.height : f.y * TILE + footH;
+    const bottom = base - (t.lift || 0);
     const img = scene.add.image(x, bottom, t.key).setOrigin(0, 1);
     if (t.flip) img.setFlipX(true);
-    img.setDepth(t.wall || t.flat ? 1 : 10 + bottom / 1000);
+    img.setDepth(t.wall || t.flat ? 1 : 10 + base / 1000 + (t.lift ? 0.0005 : 0));
   });
   // Lights: px coordinates for NightLighting. Hanging lamps get a shade drawn above.
   const lights = room.lights.map((l) => {
