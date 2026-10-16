@@ -56,7 +56,7 @@ export async function runCutscene(ui, shots, title, subtitle) {
   const rich = new RichText(ui, pad, capY, W - pad * 2, { size: portrait ? 20 : 22, onWord: (fr, en, obj) => ui.wordTip(fr, en, obj) });
   c.add(rich.container);
   const en = text(ui, pad, 0, '', 15, C.dim, { fontStyle: 'italic', wordWrap: { width: W - pad * 2, useAdvancedWrap: true } });
-  const hint = text(ui, W - pad, H - 16, '▼', 18, C.ink).setOrigin(1, 1).setVisible(false);
+  const hint = text(ui, W - pad, H - 16, '»', 22, C.ink, { fontFamily: FONT_TITLE }).setOrigin(1, 1).setVisible(false);
   ui.tweens.add({ targets: hint, alpha: 0.15, yoyo: true, repeat: -1, duration: 500 });
   c.add([en, hint]);
 
@@ -66,7 +66,7 @@ export async function runCutscene(ui, shots, title, subtitle) {
     ui.cardEn = !ui.cardEn;
     en.setVisible(!!ui.cardEn);
   }, { size: 14 });
-  const skip = makeButton(ui, W - 12 - 56 - 8 - 96, (barTop - bh) / 2, 96, bh, 'Passer ›', () => {
+  const skip = makeButton(ui, W - 12 - 56 - 8 - 96, (barTop - bh) / 2, 96, bh, 'Passer »', () => {
     skipped = true;
     ui.cutsceneSkip = null;
     ui.readyAt = 0;

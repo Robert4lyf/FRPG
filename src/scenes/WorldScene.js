@@ -870,7 +870,9 @@ export default class WorldScene extends Phaser.Scene {
     const near = this.nearest();
     this.indicator.setVisible(!!near);
     if (near) {
-      this.indicator.setText(near.kind === 'clue' ? '?' : near.kind === 'door' ? (this.indoors ? '▼' : '▲') : '!');
+      // People '!', clues '?', doors the word itself (in the typewriter font, like every label).
+      const door = near.kind === 'door';
+      this.indicator.setText(near.kind === 'clue' ? '?' : door ? (this.indoors ? 'Sortir' : 'Entrer') : '!').setFontSize(door ? 20 : 34);
       this.indicator.setPosition(near.x, near.y - (near.kind === 'person' ? SPRITES.head + 7 : 6));
     }
   }

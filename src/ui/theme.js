@@ -30,7 +30,7 @@ export function text(scene, x, y, str, size, color = C.ink, extra = {}) {
 // Outlined button that inverts when pressed. Height grows to fit wrapped text.
 // Returns { c (container), h, setLabel, setEnabled, setDim }.
 export function makeButton(scene, x, y, w, h, label, onClick, opts = {}) {
-  const { size = 20, align = 'center', font = FONT_BODY, onPress } = opts;
+  const { size = 20, align = 'center', font = FONT_TITLE, onPress } = opts; // labels: typewriter; pass FONT_BODY for sentences
   const pad = 14;
   const c = scene.add.container(x, y);
   const g = scene.add.graphics();

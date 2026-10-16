@@ -114,13 +114,13 @@ export async function runReport(ui, REPORT) {
           mistakes += 1;
           scene.sfx('wrong', 0.25);
           b.setEnabled(false);
-          b.setLabel(`${opt} ✗`);
+          b.setLabel(`${opt} — non`);
           ui.state.addReview(line.options[line.answer]);
           hintForced = true;
           hint.setVisible(true);
           note.setText('Relisez vos notes, inspecteur.').setVisible(true);
           layout(current);
-        }, { size: 18 });
+        }, { size: 18, font: FONT_BODY });
         c.add(b.c);
         btns.push(b);
       });

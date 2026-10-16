@@ -65,7 +65,7 @@ export async function runDiary(ui, diary) {
         hint.setVisible(true);
       }
       layout();
-    }, { size: portrait ? 17 : 15, align: 'left' });
+    }, { size: portrait ? 17 : 15, align: 'left', font: FONT_BODY });
     k.btn.setLabel(label(k));
     c.add(k.btn.c);
     return k;

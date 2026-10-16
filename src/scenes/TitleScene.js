@@ -96,12 +96,12 @@ export default class TitleScene extends Phaser.Scene {
     list.push(['Chapitres', () => this.showChapters()]);
     const y = this.buttons(list, this.menuTop());
     const on = !this.sound.mute;
-    const snd = makeButton(this, this.W / 2 - 70, y + 6, 140, 40, on ? 'Son ✓' : 'Son ✗', () => {
+    const snd = makeButton(this, this.W / 2 - 70, y + 6, 140, 40, on ? 'Son : oui' : 'Son : non', () => {
       const now = this.sound.mute; // toggling: muted -> on
       this.sound.mute = !now;
       this.audio?.setMuted(!now);
       try { localStorage.setItem(SOUND_KEY, now ? 'on' : 'off'); } catch { /* ignore */ }
-      snd.setLabel(now ? 'Son ✓' : 'Son ✗');
+      snd.setLabel(now ? 'Son : oui' : 'Son : non');
     }, { size: 15 });
     this.menu.add(snd.c);
   }
@@ -112,9 +112,9 @@ export default class TitleScene extends Phaser.Scene {
     const list = CHAPTER_LIST.map(({ id, unlocked }) => {
       const open = unlocked(g);
       const ch = CHAPTERS[id];
-      return [open ? ch.title : `${ch.title.split('—')[0].trim()} — 🔒`, () => this.confirm(this.hasSave(), () => { g.startAt(id); this.play(); }), !open];
+      return [open ? ch.title : `${ch.title.split('—')[0].trim()} — (fermé)`, () => this.confirm(this.hasSave(), () => { g.startAt(id); this.play(); }), !open];
     });
-    list.push(['‹ Retour', () => this.showMain()]);
+    list.push(['« Retour', () => this.showMain()]);
     this.buttons(list, this.menuTop());
   }
 
@@ -129,7 +129,7 @@ export default class TitleScene extends Phaser.Scene {
     const msg = text(this, W / 2, top + 10, 'Votre enquête en cours sera remplacée.', 17, C.ink, { align: 'center', wordWrap: { width: bw - 30 } }).setOrigin(0.5, 0);
     const en = text(this, W / 2, top + 10 + msg.height + 6, 'Your current investigation will be replaced.', 14, C.dim, { fontStyle: 'italic', align: 'center', wordWrap: { width: bw - 30 } }).setOrigin(0.5, 0);
     this.menu.add([g, msg, en]);
-    this.buttons([['Oui, recommencer', fn], ['‹ Retour', () => this.showMain()]], top + 110);
+    this.buttons([['Oui, recommencer', fn], ['« Retour', () => this.showMain()]], top + 110);
   }
 
   play() {

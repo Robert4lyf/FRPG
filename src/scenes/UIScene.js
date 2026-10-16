@@ -3,7 +3,7 @@ import {
 } from '../story/story.js';
 import { speech } from '../learning/speech.js';
 import {
-  C, FONT_TITLE, drawPanel, text, makeButton, RichText, plainText, glosses,
+  C, FONT_TITLE, FONT_BODY, drawPanel, text, makeButton, RichText, plainText, glosses,
 } from '../ui/theme.js';
 import { Weather, NoirAudio } from '../fx/noir.js';
 import { runReport } from '../ui/report.js';
@@ -87,7 +87,7 @@ export default class UIScene extends Phaser.Scene {
     this.audio?.setMuted(!on);
     speech.setEnabled(on);
     try { localStorage.setItem(SOUND_KEY, on ? 'on' : 'off'); } catch { /* ignore */ }
-    this.soundBtn?.setLabel(on ? 'Son ✓' : 'Son ✗');
+    this.soundBtn?.setLabel(on ? 'Son : oui' : 'Son : non');
   }
 
   sfx(key, volume = 0.35) {
@@ -193,10 +193,17 @@ export default class UIScene extends Phaser.Scene {
       size: 21, onWord: (fr, en, obj) => this.wordTip(fr, en, obj),
     });
     this.bodyEn = text(this, PAD, 0, '', 17, C.dim, { fontStyle: 'italic', wordWrap: { width: W - PAD * 2, useAdvancedWrap: true } });
-    this.hint = text(this, W - PAD, 0, '▼', 18, C.ink).setOrigin(1, 1);
+    this.hint = text(this, W - PAD, 0, '»', 28, C.ink, { fontFamily: FONT_TITLE }).setOrigin(1, 1);
     this.tweens.add({ targets: this.hint, alpha: 0.15, yoyo: true, repeat: -1, duration: 500 });
     this.enBtn = makeButton(this, 0, 0, 56, 34, 'EN', () => this.toggleEn(), { size: 15 });
-    this.ttsBtn = makeButton(this, 0, 0, 56, 34, '♪', () => speech.speak(this.currentFr), { size: 17 });
+    this.ttsBtn = makeButton(this, 0, 0, 56, 34, '', () => speech.speak(this.currentFr), { size: 17 });
+    // A drawn speaker icon: no font has the same symbol on every phone.
+    const icon = this.add.graphics();
+    icon.fillStyle(0xe9e3d5, 1).fillRect(16, 14, 5, 6).fillPoints([{ x: 21, y: 14 }, { x: 27, y: 9 }, { x: 27, y: 25 }, { x: 21, y: 20 }], true);
+    icon.lineStyle(1.5, 0xe9e3d5, 1);
+    icon.beginPath(); icon.arc(28, 17, 5, -0.9, 0.9); icon.strokePath();
+    icon.beginPath(); icon.arc(28, 17, 9, -0.9, 0.9); icon.strokePath();
+    this.ttsBtn.c.add(icon);
     // Speaker portrait at the left of the text box, with a blink now and then.
     this.portraitZoom = this.portrait ? 1.5 : 2;
     this.portraitFrame = this.add.graphics();
@@ -384,7 +391,7 @@ export default class UIScene extends Phaser.Scene {
           // The first reply line can't be skipped by a stray second event from this tap.
           this.readyAt = performance.now() + 350;
           r?.(o.value);
-        }, { size: 18, align: 'left' });
+        }, { size: 18, align: 'left', font: FONT_BODY });
         btn.setDim(!!o.dim);
         this.dlg.add(btn.c);
         this.options.push({ ...o, btn });
@@ -420,10 +427,10 @@ export default class UIScene extends Phaser.Scene {
       const topics = d.topics.filter((t) => (t.requires || []).every((r) => g.has(r)));
       const options = topics.map((t) => {
         const asked = g.wasAsked(id, ch.askKey(t.id));
-        return { label: `${asked ? '✓ ' : '› '}${t.q}`, en: `${asked ? '✓ ' : '› '}${t.en}`, dim: asked, value: { type: 'topic', t } };
+        return { label: `${asked ? '   ' : '» '}${t.q}`, en: `${asked ? '   ' : '» '}${t.en}`, dim: asked, value: { type: 'topic', t } };
       });
-      if (ch.evidence && g.evidence().length) options.push({ label: '◆ Présenter une preuve', en: '◆ Present evidence', value: { type: 'evidence' } });
-      options.push({ label: '✕ Partir', en: '✕ Leave', value: { type: 'leave' } });
+      if (ch.evidence && g.evidence().length) options.push({ label: '+ Présenter une preuve', en: '+ Present evidence', value: { type: 'evidence' } });
+      options.push({ label: '« Partir', en: '« Leave', value: { type: 'leave' } });
 
       const pick = await this.menu(`${CAST[id].name.toUpperCase()} · ${CAST[id].role}`, options);
       if (pick.type === 'leave') break;
@@ -580,8 +587,8 @@ export default class UIScene extends Phaser.Scene {
       prev.setEnabled(page > 0);
       next.setEnabled(page < pages.length - 1);
     };
-    const prev = makeButton(this, W / 2 - 130, bottom + 4, 60, 38, '◀', () => show(page - 1), { size: 16 });
-    const next = makeButton(this, W / 2 + 70, bottom + 4, 60, 38, '▶', () => show(page + 1), { size: 16 });
+    const prev = makeButton(this, W / 2 - 130, bottom + 4, 60, 38, '«', () => show(page - 1), { size: 16 });
+    const next = makeButton(this, W / 2 + 70, bottom + 4, 60, 38, '»', () => show(page + 1), { size: 16 });
     prev.c.setVisible(pages.length > 1);
     next.c.setVisible(pages.length > 1);
     c.add([label, prev.c, next.c]);
@@ -602,10 +609,10 @@ export default class UIScene extends Phaser.Scene {
       const of = (e) => (e.kind === 'clue' ? CLUES[e.id] : STATEMENTS[e.id]).phase === phase;
       const items = [...ev.filter(of), ...ev.filter((e) => !of(e))].map((e) => (w) => {
         const label = e.kind === 'clue'
-          ? `▣ ${e.label}`
+          ? `• ${e.label}`
           : `${CAST[e.who].name} : « ${e.label} »`;
-        const b = makeButton(this, 0, 0, w, 48, this.showEn ? (e.kind === 'clue' ? `▣ ${e.en}` : `${CAST[e.who].name}: "${e.en}"`) : label,
-          () => done(e.id), { size: 16, align: 'left' });
+        const b = makeButton(this, 0, 0, w, 48, this.showEn ? (e.kind === 'clue' ? `• ${e.en}` : `${CAST[e.who].name}: "${e.en}"`) : label,
+          () => done(e.id), { size: 16, align: 'left', font: FONT_BODY });
         return { obj: b.c, h: b.h };
       });
       const cancel = makeButton(this, this.W - PAD - 130, 28, 130, 40, 'Annuler', () => done(null), { size: 16 });
@@ -702,17 +709,17 @@ export default class UIScene extends Phaser.Scene {
       ...g.statements.filter((id) => STATEMENTS[id].t).map((id) => ({
         id, t: STATEMENTS[id].t, who: CAST[STATEMENTS[id].who].name, fr: `« ${STATEMENTS[id].fr} »`, en: STATEMENTS[id].en,
       })),
-      ...g.clues.filter((id) => CLUES[id].t).map((id) => ({ id, t: CLUES[id].t, who: `▣ ${CLUES[id].name}`, fr: CLUES[id].note.fr, en: CLUES[id].note.en })),
+      ...g.clues.filter((id) => CLUES[id].t).map((id) => ({ id, t: CLUES[id].t, who: `• ${CLUES[id].name}`, fr: CLUES[id].note.fr, en: CLUES[id].note.en })),
     ].sort((a, b) => timeKey(a.t) - timeKey(b.t));
     const fmt = (t) => t.replace(':', ' h ');
     const items = entries.map((e) => block([
-      [`${clash.has(e.id) ? '⚠ ' : ''}${fmt(e.t)} — ${e.who}`, 16, clash.has(e.id) ? '#e0645a' : C.gold, { fontFamily: FONT_TITLE }],
+      [`${clash.has(e.id) ? '! ' : ''}${fmt(e.t)} — ${e.who}`, 16, clash.has(e.id) ? '#e0645a' : C.gold, { fontFamily: FONT_TITLE }],
       [e.fr, 15, C.ink],
       [e.en, 13, C.dim, { fontStyle: 'italic' }],
     ]));
     // Open contradictions first, then the ones already explained.
     [...open, ...known.filter((k) => !open.includes(k))].forEach((k) => items.push(block([
-      [open.includes(k) ? 'CONTRADICTION' : '✓ EXPLIQUÉ', 15, open.includes(k) ? '#e0645a' : C.dim, { fontFamily: FONT_TITLE }],
+      [open.includes(k) ? 'CONTRADICTION' : 'EXPLIQUÉ', 15, open.includes(k) ? '#e0645a' : C.dim, { fontFamily: FONT_TITLE }],
       [k.fr, 15, open.includes(k) ? C.ink : C.dim],
       [k.en, 13, C.dim, { fontStyle: 'italic' }],
     ])));
