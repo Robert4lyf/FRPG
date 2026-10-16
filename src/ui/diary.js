@@ -1,4 +1,4 @@
-// Hélène's diary: the entries' dates are lost, so the player taps them in the order they
+// Inès's diary: the entries' dates are lost, so the player taps them in the order they
 // happened. The plus-que-parfait in each entry points back to the one before it.
 import { FONT_TITLE, FONT_BODY, makeButton, plainText, glosses } from './theme.js';
 
@@ -20,7 +20,7 @@ export async function runDiary(ui, diary) {
   const t = (x, y, s, size, color = INK, extra = {}) => ui.add.text(x, y, s, {
     fontFamily: FONT_BODY, fontSize: `${size}px`, color, wordWrap: { width: W - m * 2 - 48, useAdvancedWrap: true }, ...extra,
   });
-  c.add(t(m + 24, m + 18, "LE JOURNAL D'HÉLÈNE", 13, FAINT, { fontFamily: FONT_TITLE }));
+  c.add(t(m + 24, m + 18, "LE JOURNAL D'INÈS", 13, FAINT, { fontFamily: FONT_TITLE }));
   c.add(t(m + 24, m + 38, 'Dans quel ordre ?', portrait ? 22 : 24, INK, { fontFamily: FONT_TITLE }));
   const sub = t(m + 24, m + 72, 'Touchez les pages de la première à la dernière.', 15, FAINT, { fontStyle: 'italic' });
   const hint = t(m + 24, 0, `${diary.hint.fr}\n${diary.hint.en}`, 14, RED, { fontStyle: 'italic' }).setVisible(false);

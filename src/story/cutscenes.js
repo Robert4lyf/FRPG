@@ -81,7 +81,7 @@ export const CUTSCENES = {
       lines: INTRO3.slice(3),
     },
   ],
-  // Mid-chapter 3: the night Lebrun dies.
+  // Mid-chapter 3: the night Ferhat dies.
   ch3_nuit: [
     {
       img: 'c3_nuit', alt: 'The square at night, thick fog, one street lamp, the café window dark.',

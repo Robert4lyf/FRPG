@@ -1,6 +1,6 @@
 # Belleville — un polar en français
 
-A film-noir murder mystery played in French. You are Julien Morel, an inspector in Lyon who hasn't been home to Belleville for fifteen years. Then a letter arrives from Hélène, your childhood friend: *"Reviens. J'ai peur."* You see her alive for one evening. The next morning she is dead in the fountain, and the town you left is full of people who knew you, and who are all hiding something.
+A film-noir murder mystery played in French. You are Sacha Morvan, an inspector in Lyon who hasn't been home to Belleville for fifteen years. Then a letter arrives from Inès, your childhood friend: *"Reviens. J'ai peur."* You see her alive for one evening. The next morning she is dead in the fountain, and the town you left is full of people who knew you, and who are all hiding something.
 
 The French is the game, not a lesson: you understand the dialogue to catch lies, connect clues and move the case forward. Old friends call you *tu*; people who resent you insist on *vous*, and when someone switches, it means something. Aimed at players with school-level French (around GCSE). Built with HTML/JS and [Phaser 3](https://phaser.io), with no build step.
 
@@ -10,7 +10,7 @@ Enable GitHub Pages (Settings → Pages → Deploy from branch → `main` / root
 https://robert4lyf.github.io/FRPG/
 
 - **Move:** arrow keys / WASD, or tap where you want to go.
-- **Go inside:** the café, bakery, mairie, school, gendarmerie and (once you have the keys) Hélène's flat have interiors. Tap a door (▲) to go in, the doormat (▼) to leave.
+- **Go inside:** the café, bakery, mairie, school, gendarmerie and (once you have the keys) Inès's flat have interiors. Tap a door (▲) to go in, the doormat (▼) to leave.
 - **Talk / examine:** tap a person or a glinting clue, or press Space next to it.
 - **Questioning:** pick a question, or **Présenter une preuve** to confront someone with a clue or another witness's statement.
 - **Title screen:** Continuer, Nouvelle partie, and Chapitres to replay any chapter you've reached. **Menu** in the Carnet goes back to it.
@@ -29,10 +29,10 @@ Each chapter's grammar is what the investigation needs:
 
 | Chapter | Story | Grammar |
 |---|---|---|
-| Prologue (done) | The letter, the last evening with Hélène | Present, passé composé |
+| Prologue (done) | The letter, the last evening with Inès | Present, passé composé |
 | 1. Trop tard (done) | The scene, old friends and old grudges, the first lie, the post-mortem | Present, passé composé, a little imparfait |
 | 2. La nuit du crime (done) | Toussaint evening: rebuilding the night on a timeline, breaking alibis, the cemetery | Imparfait vs passé composé |
-| 3. Les secrets (done) | The judge, Hélène's diary (put the pages in order), the ambiguous "G.", a second death | Plus-que-parfait, pronouns, *qui/que/dont* |
+| 3. Les secrets (done) | The judge, Inès's diary (put the pages in order), the ambiguous "G.", a second death | Plus-que-parfait, pronouns, *qui/que/dont* |
 | 4. La vérité | Hypotheses and the accusation | Conditionnel, subjonctif |
 
 ## Writing content
