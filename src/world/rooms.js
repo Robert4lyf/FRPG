@@ -60,7 +60,7 @@ export const ROOMS = {
       { kind: 'window', x: 9, y: 0, w: 0, h: 0, span: 2 },
       { kind: 'rug', x: 3, y: 4, w: 0, h: 0, span: 5 },
       { kind: 'desk', x: 4, y: 3, w: 3, h: 1, span: 3 },
-      { kind: 'flag', x: 8, y: 2, w: 1, h: 1 },
+      { kind: 'flag', x: 7, y: 2, w: 1, h: 1 },
       { kind: 'maquette', x: 9, y: 4, w: 2, h: 1, span: 2 },
       { kind: 'plant', x: 1, y: 6, w: 1, h: 1 },
     ],
@@ -260,9 +260,30 @@ function furnitureTexture(scene, f) {
     case 'rug': return { key: canvas(scene, `f_rug${n}`, n * 16, 26, (px) => {
       px(0, 0, n * 16, 26, '#5a1e1e'); px(2, 2, n * 16 - 4, 22, '#7a2a2a'); px(4, 4, n * 16 - 8, 18, '#5a1e1e'); px(6, 6, n * 16 - 12, 14, '#8a3a2a');
     }), oy: 0, flat: true };
-    case 'flag': return { key: canvas(scene, 'f_flag', 14, 28, (px) => {
-      px(1, 0, 2, 28, '#c8a050'); px(3, 2, 3, 12, '#2a3a8a'); px(6, 2, 3, 12, '#ece8e0'); px(9, 2, 3, 12, '#b82a2a'); px(0, 26, 4, 2, OUT);
-    }), oy: 12, dx: 1 };
+    case 'flag': return { key: canvas(scene, 'f_flag2', 24, 42, (px) => {
+      // Pole: dark wood with a brass spearhead and a weighted round stand.
+      px(2, 4, 3, 34, OUT); px(3, 4, 1, 34, '#6a4a2a');
+      px(2, 0, 3, 1, '#8a6a20'); px(1, 1, 5, 2, '#c8a040'); px(2, 1, 2, 1, '#f0d070'); px(3, 3, 1, 1, '#c8a040');
+      px(0, 37, 8, 3, OUT); px(1, 37, 6, 2, '#3a2a1c'); px(1, 37, 6, 1, '#6a4a2a'); px(-1, 40, 10, 2, 'rgba(0,0,0,0.35)');
+      // The cloth hangs from the top of the pole in soft vertical folds; it drapes lower
+      // near the pole. Stripes: blue at the hoist, white, red.
+      const top = 5;
+      const cols = [
+        ['#1f2f78', '#2a3f9a', '#3a52b8'], // blue: shadow, base, light
+        ['#c8c4bc', '#e8e4dc', '#ffffff'], // white
+        ['#8a1e22', '#b82a2a', '#d8443c'], // red
+      ];
+      for (let x = 0; x < 18; x++) {
+        const stripe = Math.min(2, Math.floor(x / 6));
+        const fold = [2, 1, 1, 0, 1, 2][x % 6]; // light catches the middle of each fold
+        const len = 22 - Math.round(x * 0.35) + (x % 6 === 2 ? 1 : 0); // longer near the pole, rippled hem
+        px(5 + x, top, 1, len, cols[stripe][fold]);
+        px(5 + x, top + len, 1, 1, '#c8a040'); // gold fringe
+        if (x % 2 === 0) px(5 + x, top + len + 1, 1, 1, '#8a6a20');
+      }
+      px(5, top, 18, 1, 'rgba(0,0,0,0.25)'); // shadow under the sleeve
+      px(4, top - 1, 2, 3, '#c8a040');       // sleeve ring on the pole
+    }), oy: 14, dx: 0 };
     case 'maquette': return { key: canvas(scene, `f_maq${n}`, n * 16, 20, (px) => {
       px(0, 6, n * 16, 14, OUT); px(1, 7, n * 16 - 2, 3, '#4a7a3a'); px(1, 10, n * 16 - 2, 9, WOOD[1]);
       [[3, 0, 5, 8], [10, 2, 4, 6], [16, 1, 6, 7], [24, 3, 4, 5]].forEach(([x, y, w, h]) => { if (x + w < n * 16) { px(x, y, w, h, '#ece8e0'); px(x, y, w, 1, '#ffffff'); px(x + 1, y + 2, 1, 1, '#8a8a9a'); } });
