@@ -519,7 +519,7 @@ export default class UIScene extends Phaser.Scene {
   // ---------- tooltips ----------
 
   buildTooltip() {
-    this.tip = this.add.container(0, 0).setDepth(250).setVisible(false);
+    this.tip = this.add.container(0, 0).setDepth(400).setVisible(false);
   }
 
   wordTip(fr, en, obj) {
